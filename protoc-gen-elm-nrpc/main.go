@@ -122,7 +122,7 @@ func processFile(inFile *descriptor.FileDescriptorProto) (*plugin.CodeGeneratorR
 	outFile.Name = proto.String(outFileName)
 
 	b := &bytes.Buffer{}
-	fg := NewFileGenerator(b, inFileName)
+	fg := NewFileGenerator(b, inFile)
 
 	fg.GenerateModule(fullModuleName)
 	fg.GenerateComments(inFile)
@@ -147,6 +147,25 @@ func processFile(inFile *descriptor.FileDescriptorProto) (*plugin.CodeGeneratorR
 		fullModuleName = strings.TrimSuffix(fullModuleName, ".")
 		// TODO: Do not expose everything.
 		fg.P("import %s exposing (..)", fullModuleName)
+	}
+
+	fg.P("")
+	fg.P("")
+	fg.P("pkgSubject : String")
+	fg.P("pkgSubject =")
+	fg.In()
+	fg.P("\"%s\"", PkgSubject(inFile))
+	fg.Out()
+
+	if len(PkgSubjectParams(inFile)) != 0 {
+		fg.P("type alias PkgParams =")
+		var lead = "{"
+		fg.In()
+		for _, name := range PkgSubjectParams(inFile) {
+			fg.P("%s %s: string", lead, name)
+			lead = ","
+		}
+		fg.Out()
 	}
 
 	for _, inService := range inFile.GetService() {
@@ -179,8 +198,6 @@ func (fg *FileGenerator) GenerateImports() {
 	fg.P("import Nats.Sub")
 	fg.P("import Nrpc")
 	fg.P("")
-	fg.P("import Json.Decode as JD")
-	fg.P("import Json.Encode as JE")
 }
 
 func elmTypeName(in string) string {

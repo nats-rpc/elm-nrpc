@@ -1,8 +1,15 @@
-module Nrpc exposing (Error(..), request, requestSubscribe)
+module Nrpc
+    exposing
+        ( Error(..)
+        , request
+        , requestVoidReply
+        , requestSubscribe
+        , requestSubscribeVoidReply
+        )
 
 {-| Utilities for Nrpc generated code
 
-@docs Error, request, requestSubscribe
+@docs Error, request, requestSubscribe, requestVoidReply, requestSubscribeVoidReply
 
 -}
 
@@ -26,50 +33,80 @@ type Error
     | EOS
 
 
+handleResponse : Decoder a -> Result Nats.Errors.Timeout Nats.Protocol.Message -> Result Error a
+handleResponse decoder result =
+    case result of
+        Ok message ->
+            decodeMessage decoder message
+
+        Err _ ->
+            Err Timeout
+
+
+handleVoidResponse : Result Nats.Errors.Timeout Nats.Protocol.Message -> Result Error ()
+handleVoidResponse result =
+    case result of
+        Ok message ->
+            if message.data /= "" then
+                case Json.Decode.decodeString decodeError message.data of
+                    Ok err ->
+                        Err err
+
+                    Err err ->
+                        Err <| DecodeError err
+            else
+                Err <| DecodeError ("Unexpected payload: " ++ message.data)
+
+        Err _ ->
+            Err Timeout
+
+
 {-| Perform a request
 -}
 request : String -> Maybe Json.Encode.Value -> Decoder b -> (Result Error b -> msg) -> Nats.Cmd.Cmd msg
 request subject payload decoder tagger =
-    let
-        handleResponse : Result Nats.Errors.Timeout Nats.Protocol.Message -> msg
-        handleResponse result =
-            tagger <|
-                case result of
-                    Ok message ->
-                        decodeMessage decoder message
+    Nats.request subject
+        (payload
+            |> Maybe.map (Json.Encode.encode 0)
+            |> Maybe.withDefault ""
+        )
+        (handleResponse decoder >> tagger)
 
-                    Err _ ->
-                        Err Timeout
-    in
-        Nats.request subject
-            (payload
-                |> Maybe.map (Json.Encode.encode 0)
-                |> Maybe.withDefault ""
-            )
-            handleResponse
+
+{-| subsribe to a stream request with void replies
+-}
+requestVoidReply : String -> Maybe Json.Encode.Value -> (Result Error () -> msg) -> Nats.Cmd.Cmd msg
+requestVoidReply subject payload tagger =
+    Nats.request subject
+        (payload
+            |> Maybe.map (Json.Encode.encode 0)
+            |> Maybe.withDefault ""
+        )
+        (handleVoidResponse >> tagger)
 
 
 {-| subscribe to a stream request
 -}
 requestSubscribe : String -> Maybe Json.Encode.Value -> Decoder b -> (Result Error b -> msg) -> Nats.Sub.Sub msg
 requestSubscribe subject payload decoder tagger =
-    let
-        handleResponse : Result Nats.Errors.Timeout Nats.Protocol.Message -> msg
-        handleResponse result =
-            tagger <|
-                case result of
-                    Ok message ->
-                        decodeMessage decoder message
+    Nats.requestSubscribe subject
+        (payload
+            |> Maybe.map (Json.Encode.encode 0)
+            |> Maybe.withDefault ""
+        )
+        (handleResponse decoder >> tagger)
 
-                    Err _ ->
-                        Err Timeout
-    in
-        Nats.requestSubscribe subject
-            (payload
-                |> Maybe.map (Json.Encode.encode 0)
-                |> Maybe.withDefault ""
-            )
-            handleResponse
+
+{-| subsribe to a stream request with void replies
+-}
+requestSubscribeVoidReply : String -> Maybe Json.Encode.Value -> (Result Error () -> msg) -> Nats.Sub.Sub msg
+requestSubscribeVoidReply subject payload tagger =
+    Nats.requestSubscribe subject
+        (payload
+            |> Maybe.map (Json.Encode.encode 0)
+            |> Maybe.withDefault ""
+        )
+        (handleVoidResponse >> tagger)
 
 
 decodeMessage : Decoder a -> Nats.Protocol.Message -> Result Error a
