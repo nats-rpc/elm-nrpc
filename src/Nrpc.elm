@@ -20,6 +20,7 @@ import Nats.Cmd
 import Nats.Errors
 import Nats.Protocol
 import Nats.Sub
+import Nrpc.Nrpc
 
 
 {-| Nrpc error type
@@ -30,7 +31,7 @@ type Error
     | ClientError String
     | ServerError String
     | ServerTooBusy
-    | EOS
+    | EOS Int
 
 
 handleResponse : Decoder a -> Result Nats.Errors.Timeout Nats.Protocol.Message -> Result Error a
@@ -131,22 +132,19 @@ decodeMessage decoder message =
 
 decodeError : Decoder Error
 decodeError =
-    Json.Decode.at [ "__error__", "type" ] Json.Decode.int
+    Json.Decode.field "__error__" Nrpc.Nrpc.errorDecoder
         |> Json.Decode.map
             (\err ->
-                case err of
-                    0 ->
-                        ClientError ""
+                case err.type_ of
+                    Nrpc.Nrpc.Error_Client ->
+                        ClientError err.message
 
-                    1 ->
-                        ServerError ""
+                    Nrpc.Nrpc.Error_Server ->
+                        ServerError err.message
 
-                    3 ->
-                        EOS
+                    Nrpc.Nrpc.Error_Eos ->
+                        EOS err.msgCount
 
-                    4 ->
+                    Nrpc.Nrpc.Error_Servertoobusy ->
                         ServerTooBusy
-
-                    _ ->
-                        DecodeError <| "Unknown error type: " ++ toString err
             )
