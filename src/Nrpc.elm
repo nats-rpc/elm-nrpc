@@ -1,11 +1,4 @@
-module Nrpc
-    exposing
-        ( Error(..)
-        , request
-        , requestVoidReply
-        , requestSubscribe
-        , requestSubscribeVoidReply
-        )
+module Nrpc exposing (Error(..), request, requestSubscribe, requestVoidReply, requestSubscribeVoidReply)
 
 {-| Utilities for Nrpc generated code
 
@@ -54,7 +47,8 @@ handleVoidResponse result =
                         Err err
 
                     Err err ->
-                        Err <| DecodeError err
+                        err |> Json.Decode.errorToString |> DecodeError |> Err
+
             else
                 Err <| DecodeError ("Unexpected payload: " ++ message.data)
 
@@ -124,10 +118,10 @@ decodeMessage decoder message =
                             Ok result
 
                         Err err ->
-                            Err <| DecodeError err
+                            err |> Json.Decode.errorToString |> DecodeError |> Err
 
         Err err ->
-            Err <| DecodeError err
+            err |> Json.Decode.errorToString |> DecodeError |> Err
 
 
 decodeError : Decoder Error
