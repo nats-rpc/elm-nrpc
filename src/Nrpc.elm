@@ -48,7 +48,6 @@ handleVoidResponse result =
 
                     Err err ->
                         err |> Json.Decode.errorToString |> DecodeError |> Err
-
             else
                 Err <| DecodeError ("Unexpected payload: " ++ message.data)
 
@@ -63,7 +62,7 @@ request subject payload decoder tagger =
     Nats.request subject
         (payload
             |> Maybe.map (Json.Encode.encode 0)
-            |> Maybe.withDefault ""
+            |> Maybe.withDefault "{}"
         )
         (handleResponse decoder >> tagger)
 
