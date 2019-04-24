@@ -71,7 +71,8 @@ func (fg *FileGenerator) GenerateMethod(
 	methodName := prefix + inMethod.GetName()
 	inputType := fg.lookupElmType(inMethod.GetInputType())
 	outputType := fg.lookupElmType(inMethod.GetOutputType())
-	hasInput := inMethod.GetInputType() != ".nrpc.Void"
+	noRequestMethod := inMethod.GetInputType() == ".nrpc.NoRequest"
+	hasInput := !noRequestMethod && inMethod.GetInputType() != ".nrpc.Void"
 	hasOutput := inMethod.GetOutputType() != ".nrpc.Void"
 	streamedReply := HasStreamedReply(inMethod)
 
@@ -132,7 +133,7 @@ func (fg *FileGenerator) GenerateMethod(
 
 	sig := fmt.Sprintf("(Result Nrpc.Error %s -> msg)", outputType)
 	argsline := "tagger"
-	if hasInput {
+	if hasInput && !noRequestMethod {
 		sig = fmt.Sprintf("%s -> %s", inputType, sig)
 		argsline = "input " + argsline
 	}
@@ -144,7 +145,7 @@ func (fg *FileGenerator) GenerateMethod(
 		sig = fmt.Sprintf("%s -> %s", svcParamsType, sig)
 		argsline = "svcParams " + argsline
 	}
-	if streamedReply {
+	if streamedReply || noRequestMethod {
 		sig += " -> Nats.Sub.Sub msg"
 	} else {
 		sig += " -> Nats.Cmd.Cmd msg"
@@ -153,7 +154,9 @@ func (fg *FileGenerator) GenerateMethod(
 	fg.P("%s %s =", methodName, argsline)
 
 	fg.In()
-	{
+	if noRequestMethod {
+		fg.P("Nrpc.subscribeToNoRequestMethod")
+	} else {
 		var suffix = ""
 		if streamedReply {
 			suffix += "Subscribe"
@@ -172,10 +175,12 @@ func (fg *FileGenerator) GenerateMethod(
 		subject += " params"
 	}
 	fg.P("(%s)", subject)
-	if hasInput {
-		fg.P("(Just (%s input))", encoderName(inputType))
-	} else {
-		fg.P("Nothing")
+	if !noRequestMethod {
+		if hasInput {
+			fg.P("(Just (%s input))", encoderName(inputType))
+		} else {
+			fg.P("Nothing")
+		}
 	}
 	if hasOutput {
 		fg.P("%s", decoderName(outputType))

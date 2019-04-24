@@ -1,4 +1,7 @@
-module Nrpc exposing (Error(..), request, requestSubscribe, requestVoidReply, requestSubscribeVoidReply)
+module Nrpc exposing
+    ( Error(..), request, requestSubscribe, requestVoidReply, requestSubscribeVoidReply
+    , subscribeToNoRequestMethod
+    )
 
 {-| Utilities for Nrpc generated code
 
@@ -48,6 +51,7 @@ handleVoidResponse result =
 
                     Err err ->
                         err |> Json.Decode.errorToString |> DecodeError |> Err
+
             else
                 Err <| DecodeError ("Unexpected payload: " ++ message.data)
 
@@ -91,7 +95,7 @@ requestSubscribe subject payload decoder tagger =
         (handleResponse decoder >> tagger)
 
 
-{-| subsribe to a stream request with void replies
+{-| subscribe to a stream request with void replies
 -}
 requestSubscribeVoidReply : String -> Maybe Json.Encode.Value -> (Result Error () -> msg) -> Nats.Sub.Sub msg
 requestSubscribeVoidReply subject payload tagger =
@@ -101,6 +105,14 @@ requestSubscribeVoidReply subject payload tagger =
             |> Maybe.withDefault ""
         )
         (handleVoidResponse >> tagger)
+
+
+{-| subscribe to a NoRequest method
+-}
+subscribeToNoRequestMethod : String -> Decoder a -> (Result Error a -> msg) -> Nats.Sub.Sub msg
+subscribeToNoRequestMethod subject decoder tagger =
+    Nats.subscribe subject
+        (decodeMessage decoder >> tagger)
 
 
 decodeMessage : Decoder a -> Nats.Protocol.Message -> Result Error a
