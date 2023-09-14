@@ -11,20 +11,14 @@ process.stdin.on("data", (chunk) => {
 process.stdin.on("end", () => {
     const request = Buffer.concat(chunks);
 
-    const app = Elm.Generate.init({
+    const app = Elm.Main.init({
         flags: { request : request.toString("base64") },
     });
 
-    if (app.ports.onSuccessSend) {
-        app.ports.onSuccessSend.subscribe(function(response) {
+    if (app.ports.output) {
+        app.ports.output.subscribe(function(response) {
             const bytes = Buffer.from(response, "base64")
             process.stdout.write(bytes);
-        })
-    }
-
-    if (app.ports.onFailureSend) {
-        app.ports.onFailureSend.subscribe(function(errors) {
-            console.log("Failed:", errors)
         })
     }
 });

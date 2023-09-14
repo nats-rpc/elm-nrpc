@@ -4304,52 +4304,15 @@ var $author$project$Proto$Google$Protobuf$Compiler$Internals_$encodeProto__Googl
 			]));
 };
 var $author$project$Proto$Google$Protobuf$Compiler$encodeCodeGeneratorResponse = $author$project$Proto$Google$Protobuf$Compiler$Internals_$encodeProto__Google__Protobuf__Compiler__CodeGeneratorResponse;
-var $elm$json$Json$Encode$list = F2(
-	function (func, entries) {
-		return _Json_wrap(
-			A3(
-				$elm$core$List$foldl,
-				_Json_addEntry(func),
-				_Json_emptyArray(_Utils_Tuple0),
-				entries));
-	});
-var $elm$json$Json$Encode$object = function (pairs) {
-	return _Json_wrap(
-		A3(
-			$elm$core$List$foldl,
-			F2(
-				function (_v0, obj) {
-					var k = _v0.a;
-					var v = _v0.b;
-					return A3(_Json_addField, k, v, obj);
-				}),
-			_Json_emptyObject(_Utils_Tuple0),
-			pairs));
-};
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Gen$CodeGen$Generate$onFailureSend = _Platform_outgoingPort(
-	'onFailureSend',
-	$elm$json$Json$Encode$list(
-		function ($) {
-			return $elm$json$Json$Encode$object(
-				_List_fromArray(
-					[
-						_Utils_Tuple2(
-						'description',
-						$elm$json$Json$Encode$string($.description)),
-						_Utils_Tuple2(
-						'title',
-						$elm$json$Json$Encode$string($.title))
-					]));
-		}));
-var $author$project$Gen$CodeGen$Generate$error = function (errs) {
-	return $author$project$Gen$CodeGen$Generate$onFailureSend(errs);
+var $author$project$Generate$errToString = function (err) {
+	return err.title + (': ' + err.description);
 };
 var $eriktim$elm_protocol_buffers$Protobuf$Types$Int64$fromInts = $eriktim$elm_protocol_buffers$Internal$Int64$fromInts;
-var $author$project$Generate$handleRequest = function (request) {
+var $author$project$Generate$generate = function (request) {
 	return $elm$core$Result$Err('not (yet) implemented');
 };
-var $author$project$Generate$onSuccessSend = _Platform_outgoingPort('onSuccessSend', $elm$json$Json$Encode$string);
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $author$project$Main$output = _Platform_outgoingPort('output', $elm$json$Json$Encode$string);
 var $chelovek0v$bbase64$Base64$Decode$Decoder = function (a) {
 	return {$: 'Decoder', a: a};
 };
@@ -7149,7 +7112,7 @@ var $author$project$Proto$Google$Protobuf$Compiler$Internals_$decodeProto__Googl
 				}))
 		]));
 var $author$project$Proto$Google$Protobuf$Compiler$decodeCodeGeneratorRequest = $author$project$Proto$Google$Protobuf$Compiler$Internals_$decodeProto__Google__Protobuf__Compiler__CodeGeneratorRequest;
-var $author$project$Generate$parseRequest = function (s) {
+var $author$project$Main$parseRequest = function (s) {
 	var _v0 = A2($chelovek0v$bbase64$Base64$Decode$decode, $chelovek0v$bbase64$Base64$Decode$bytes, s);
 	if (_v0.$ === 'Err') {
 		var err = _v0.a;
@@ -7176,48 +7139,43 @@ var $author$project$Generate$parseRequest = function (s) {
 		}
 	}
 };
-var $author$project$Generate$init = function (flags) {
-	var _v0 = $author$project$Generate$parseRequest(flags.request);
-	if (_v0.$ === 'Ok') {
-		var request = _v0.a;
-		var _v1 = $author$project$Generate$handleRequest(request);
-		if (_v1.$ === 'Ok') {
-			var fileList = _v1.a;
-			return _Utils_Tuple2(
-				_Utils_Tuple0,
-				$author$project$Generate$onSuccessSend(
-					$chelovek0v$bbase64$Base64$Encode$encode(
-						$chelovek0v$bbase64$Base64$Encode$bytes(
-							$eriktim$elm_protocol_buffers$Protobuf$Encode$encode(
-								$author$project$Proto$Google$Protobuf$Compiler$encodeCodeGeneratorResponse(
-									{
-										error: '',
-										file: fileList,
-										supportedFeatures: A2($eriktim$elm_protocol_buffers$Protobuf$Types$Int64$fromInts, 0, 0)
-									}))))));
-		} else {
-			var err = _v1.a;
-			return _Utils_Tuple2(
-				_Utils_Tuple0,
-				$author$project$Generate$onSuccessSend(
-					$chelovek0v$bbase64$Base64$Encode$encode(
-						$chelovek0v$bbase64$Base64$Encode$bytes(
-							$eriktim$elm_protocol_buffers$Protobuf$Encode$encode(
-								$author$project$Proto$Google$Protobuf$Compiler$encodeCodeGeneratorResponse(
-									{
-										error: err,
+var $author$project$Main$init = function (flags) {
+	return _Utils_Tuple2(
+		_Utils_Tuple0,
+		$author$project$Main$output(
+			$chelovek0v$bbase64$Base64$Encode$encode(
+				$chelovek0v$bbase64$Base64$Encode$bytes(
+					$eriktim$elm_protocol_buffers$Protobuf$Encode$encode(
+						$author$project$Proto$Google$Protobuf$Compiler$encodeCodeGeneratorResponse(
+							function () {
+								var _v0 = $author$project$Main$parseRequest(flags.request);
+								if (_v0.$ === 'Ok') {
+									var request = _v0.a;
+									var _v1 = $author$project$Generate$generate(request);
+									if (_v1.$ === 'Ok') {
+										var fileList = _v1.a;
+										return {
+											error: '',
+											file: fileList,
+											supportedFeatures: A2($eriktim$elm_protocol_buffers$Protobuf$Types$Int64$fromInts, 0, 0)
+										};
+									} else {
+										var err = _v1.a;
+										return {
+											error: err,
+											file: _List_Nil,
+											supportedFeatures: A2($eriktim$elm_protocol_buffers$Protobuf$Types$Int64$fromInts, 0, 0)
+										};
+									}
+								} else {
+									var err = _v0.a;
+									return {
+										error: $author$project$Generate$errToString(err),
 										file: _List_Nil,
 										supportedFeatures: A2($eriktim$elm_protocol_buffers$Protobuf$Types$Int64$fromInts, 0, 0)
-									}))))));
-		}
-	} else {
-		var err = _v0.a;
-		return _Utils_Tuple2(
-			_Utils_Tuple0,
-			$author$project$Gen$CodeGen$Generate$error(
-				_List_fromArray(
-					[err])));
-	}
+									};
+								}
+							}()))))));
 };
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
@@ -7226,9 +7184,9 @@ var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $elm$json$Json$Decode$string = _Json_decodeString;
 var $elm$json$Json$Decode$succeed = _Json_succeed;
 var $elm$core$Platform$worker = _Platform_worker;
-var $author$project$Generate$main = $elm$core$Platform$worker(
+var $author$project$Main$main = $elm$core$Platform$worker(
 	{
-		init: $author$project$Generate$init,
+		init: $author$project$Main$init,
 		subscriptions: function (_v0) {
 			return $elm$core$Platform$Sub$none;
 		},
@@ -7237,7 +7195,7 @@ var $author$project$Generate$main = $elm$core$Platform$worker(
 				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 			})
 	});
-_Platform_export({'Generate':{'init':$author$project$Generate$main(
+_Platform_export({'Main':{'init':$author$project$Main$main(
 	A2(
 		$elm$json$Json$Decode$andThen,
 		function (request) {
