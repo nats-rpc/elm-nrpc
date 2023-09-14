@@ -2,13 +2,13 @@
 
 
 proto:
-	go install ./protoc-gen-elm-nrpc
-	protoc --elm_out "excludeFile=google/protobuf/descriptor.proto:src/" nrpc/nrpc.proto
+	cd protoc-gen-elm-nrpc && go install .
+	NO_GRPC=true protoc --elm_out "excludeFile=google/protobuf/descriptor.proto:src/" nrpc/nrpc.proto
 
 examples:
-	go install ./protoc-gen-elm-nrpc
+	cd protoc-gen-elm-nrpc && go install .
 	cd examples/alloptions && \
-		protoc \
+		NO_GRPC=true protoc \
 			--proto_path=. \
 			--proto_path=../.. \
 			--elm_out "excludeFile=google/protobuf/descriptor.proto:src" \

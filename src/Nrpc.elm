@@ -1,22 +1,26 @@
 module Nrpc exposing
-    ( Error(..), request, requestSubscribe, requestVoidReply, requestSubscribeVoidReply
+    ( Error(..), request, requestVoidReply
     , subscribeToNoRequestMethod
+      --, requestSubscribe, requestSubscribeVoidReply
     )
 
 {-| Utilities for Nrpc generated code
 
-@docs Error, request, requestSubscribe, requestVoidReply, requestSubscribeVoidReply
+@docs Error, request, requestVoidReply
+@docs requestSubscribe, requestSubscribeVoidReply
 
 -}
 
-import Json.Decode exposing (Decoder)
-import Json.Encode
+import Bytes exposing (Bytes)
+import Bytes.Decode
 import Nats
-import Nats.Cmd
 import Nats.Errors
 import Nats.Protocol
 import Nats.Sub
-import Nrpc.Nrpc
+import Proto.Nrpc exposing (decodeError)
+import Proto.Nrpc.Internals_
+import Protobuf.Decode exposing (Decoder)
+import Protobuf.Encode exposing (Encoder)
 
 
 {-| Nrpc error type
@@ -26,11 +30,15 @@ type Error
     | DecodeError String
     | ClientError String
     | ServerError String
-    | ServerTooBusy
+    | ServerTooBusy String
     | EOS Int
 
 
-handleResponse : Decoder a -> Result Nats.Errors.Timeout Nats.Protocol.Message -> Result Error a
+type alias Message =
+    Bytes
+
+
+handleResponse : Decoder a -> Result Nats.Errors.Timeout Message -> Result Error a
 handleResponse decoder result =
     case result of
         Ok message ->
@@ -40,20 +48,20 @@ handleResponse decoder result =
             Err Timeout
 
 
-handleVoidResponse : Result Nats.Errors.Timeout Nats.Protocol.Message -> Result Error ()
+handleVoidResponse : Result Nats.Errors.Timeout Message -> Result Error ()
 handleVoidResponse result =
     case result of
         Ok message ->
-            if message.data /= "" then
-                case Json.Decode.decodeString decodeError message.data of
-                    Ok err ->
-                        Err err
+            if Bytes.width message /= 0 then
+                case Protobuf.Decode.decode decodeError message of
+                    Just err ->
+                        Err <| fromProtoError err
 
-                    Err err ->
-                        err |> Json.Decode.errorToString |> DecodeError |> Err
+                    Nothing ->
+                        Err <| DecodeError "handleVoidResponse: could not decode error payload"
 
             else
-                Err <| DecodeError ("Unexpected payload: " ++ message.data)
+                Ok ()
 
         Err _ ->
             Err Timeout
@@ -61,95 +69,113 @@ handleVoidResponse result =
 
 {-| Perform a request
 -}
-request : String -> Maybe Json.Encode.Value -> Decoder b -> (Result Error b -> msg) -> Nats.Cmd.Cmd msg
-request subject payload decoder tagger =
+request :
+    (arg -> Encoder)
+    -> Decoder result
+    -> String
+    -> arg
+    -> (Result Error result -> msg)
+    -> Nats.Effect Bytes msg
+request encode decoder subject arg onResponse =
     Nats.request subject
-        (payload
-            |> Maybe.map (Json.Encode.encode 0)
-            |> Maybe.withDefault "{}"
+        (encode arg |> Protobuf.Encode.encode)
+        (Result.mapError
+            (\_ -> Timeout)
+            >> Result.andThen
+                (Protobuf.Decode.decode decoder
+                    >> Result.fromMaybe (DecodeError "could not decode response")
+                )
+            >> onResponse
         )
-        (handleResponse decoder >> tagger)
 
 
 {-| subsribe to a stream request with void replies
 -}
-requestVoidReply : String -> Maybe Json.Encode.Value -> (Result Error () -> msg) -> Nats.Cmd.Cmd msg
-requestVoidReply subject payload tagger =
+requestVoidReply :
+    (arg -> Encoder)
+    -> String
+    -> arg
+    -> (Result Error () -> msg)
+    -> Nats.Effect Bytes msg
+requestVoidReply encode subject arg tagger =
     Nats.request subject
-        (payload
-            |> Maybe.map (Json.Encode.encode 0)
-            |> Maybe.withDefault ""
-        )
+        (encode arg |> Protobuf.Encode.encode)
         (handleVoidResponse >> tagger)
 
 
-{-| subscribe to a stream request
--}
-requestSubscribe : String -> Maybe Json.Encode.Value -> Decoder b -> (Result Error b -> msg) -> Nats.Sub.Sub msg
-requestSubscribe subject payload decoder tagger =
-    Nats.requestSubscribe subject
-        (payload
-            |> Maybe.map (Json.Encode.encode 0)
-            |> Maybe.withDefault ""
-        )
-        (handleResponse decoder >> tagger)
 
-
-{-| subscribe to a stream request with void replies
+{- subscribe to a stream request
+   requestSubscribe : String -> Maybe Json.Encode.Value -> Decoder b -> (Result Error b -> msg) -> Nats.Sub.Sub msg
+   requestSubscribe subject payload decoder tagger =
+   Nats.requestSubscribe subject
+   (payload
+   |> Maybe.map (Json.Encode.encode 0)
+   |> Maybe.withDefault ""
+   )
+   (handleResponse decoder >> tagger)
 -}
-requestSubscribeVoidReply : String -> Maybe Json.Encode.Value -> (Result Error () -> msg) -> Nats.Sub.Sub msg
-requestSubscribeVoidReply subject payload tagger =
-    Nats.requestSubscribe subject
-        (payload
-            |> Maybe.map (Json.Encode.encode 0)
-            |> Maybe.withDefault ""
-        )
-        (handleVoidResponse >> tagger)
+{- subscribe to a stream request with void replies
+   requestSubscribeVoidReply : String -> Maybe Json.Encode.Value -> (Result Error () -> msg) -> Nats.Sub.Sub msg
+   requestSubscribeVoidReply subject payload tagger =
+   Nats.requestSubscribe subject
+   (payload
+   |> Maybe.map (Json.Encode.encode 0)
+   |> Maybe.withDefault ""
+   )
+   (handleVoidResponse >> tagger)
+-}
 
 
 {-| subscribe to a NoRequest method
 -}
-subscribeToNoRequestMethod : String -> Decoder a -> (Result Error a -> msg) -> Nats.Sub.Sub msg
+subscribeToNoRequestMethod : String -> Decoder a -> (Result Error a -> msg) -> Nats.Sub Bytes msg
 subscribeToNoRequestMethod subject decoder tagger =
     Nats.subscribe subject
-        (decodeMessage decoder >> tagger)
+        (.data >> decodeMessage decoder >> tagger)
 
 
-decodeMessage : Decoder a -> Nats.Protocol.Message -> Result Error a
+decodeMessage : Decoder a -> Bytes -> Result Error a
 decodeMessage decoder message =
-    case Json.Decode.decodeString Json.Decode.value message.data of
-        Ok json ->
-            case Json.Decode.decodeValue decodeError json of
-                Ok err ->
-                    Err err
+    let
+        isError =
+            message
+                |> Bytes.Decode.decode
+                    (Bytes.Decode.signedInt8
+                        |> Bytes.Decode.map ((==) 0)
+                    )
+                |> Maybe.withDefault False
+    in
+    if isError then
+        case Protobuf.Decode.decode decodeError message of
+            Just err ->
+                Err <| fromProtoError err
 
-                Err _ ->
-                    case Json.Decode.decodeValue decoder json of
-                        Ok result ->
-                            Ok result
+            Nothing ->
+                Err <| DecodeError "could not decode the error"
 
-                        Err err ->
-                            err |> Json.Decode.errorToString |> DecodeError |> Err
+    else
+        case Protobuf.Decode.decode decoder message of
+            Just value ->
+                Ok value
 
-        Err err ->
-            err |> Json.Decode.errorToString |> DecodeError |> Err
+            Nothing ->
+                Err <| DecodeError "could not decode the response"
 
 
-decodeError : Decoder Error
-decodeError =
-    Json.Decode.field "__error__" Nrpc.Nrpc.errorDecoder
-        |> Json.Decode.map
-            (\err ->
-                case err.type_ of
-                    Nrpc.Nrpc.Error_Client ->
-                        ClientError err.message
+fromProtoError : Proto.Nrpc.Error -> Error
+fromProtoError err =
+    case err.type_ of
+        Proto.Nrpc.Internals_.Proto__Nrpc__Error__CLIENT ->
+            ClientError err.message
 
-                    Nrpc.Nrpc.Error_Server ->
-                        ServerError err.message
+        Proto.Nrpc.Internals_.Proto__Nrpc__Error__SERVER ->
+            ServerError err.message
 
-                    Nrpc.Nrpc.Error_Eos ->
-                        EOS err.msgCount
+        Proto.Nrpc.Internals_.Proto__Nrpc__Error__EOS ->
+            EOS err.msgCount
 
-                    Nrpc.Nrpc.Error_Servertoobusy ->
-                        ServerTooBusy
-            )
+        Proto.Nrpc.Internals_.Proto__Nrpc__Error__SERVERTOOBUSY ->
+            ServerTooBusy err.message
+
+        Proto.Nrpc.Internals_.Proto__Nrpc__Error__TypeUnrecognized_ i ->
+            DecodeError <| "invalid error type: " ++ String.fromInt i
