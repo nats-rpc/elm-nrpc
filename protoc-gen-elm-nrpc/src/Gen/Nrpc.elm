@@ -1,16 +1,18 @@
-module Gen.Nrpc exposing (annotation_, call_, caseOf_, make_, moduleName_, request, requestVoidReply, subscribeToNoRequestMethod, values_)
+module Gen.Nrpc exposing (moduleName_, subscribeToNoRequestMethod, requestVoidReply, request, annotation_, make_, caseOf_, call_, values_)
 
-{-| 
+{-|
+
 @docs moduleName_, subscribeToNoRequestMethod, requestVoidReply, request, annotation_, make_, caseOf_, call_, values_
--}
 
+-}
 
 import Elm
 import Elm.Annotation as Type
 import Elm.Case
 
 
-{-| The name of this module. -}
+{-| The name of this module.
+-}
 moduleName_ : List String
 moduleName_ =
     [ "Nrpc" ]
@@ -20,6 +22,7 @@ moduleName_ =
 -}
 
 subscribeToNoRequestMethod: String -> Decoder a -> (Result Error a -> msg) -> Nats.Sub Bytes msg
+
 -}
 subscribeToNoRequestMethod :
     String
@@ -63,12 +66,13 @@ subscribeToNoRequestMethod subscribeToNoRequestMethodArg subscribeToNoRequestMet
 {-| {-| subsribe to a stream request with void replies
 -}
 
-requestVoidReply: 
-    (arg -> Encoder)
-    -> String
-    -> arg
-    -> (Result Error () -> msg)
-    -> Nats.Effect Bytes msg
+requestVoidReply:
+(arg -> Encoder)
+-> String
+-> arg
+-> (Result Error () -> msg)
+-> Nats.Effect Bytes msg
+
 -}
 requestVoidReply :
     (Elm.Expression -> Elm.Expression)
@@ -115,20 +119,21 @@ requestVoidReply requestVoidReplyArg requestVoidReplyArg0 requestVoidReplyArg1 r
 {-| {-| Perform a request
 -}
 
-request: 
-    (arg -> Encoder)
-    -> Decoder result
-    -> String
-    -> arg
-    -> (Result Error result -> msg)
-    -> Nats.Effect Bytes msg
+request:
+(arg -> Encoder)
+-> Decoder result
+-> String
+-> arg
+-> (Result Error result -> msg)
+-> Nats.Effect Bytes msg
+
 -}
 request :
-    (Elm.Expression -> Elm.Expression)
+    Elm.Expression
     -> Elm.Expression
-    -> String
     -> Elm.Expression
-    -> (Elm.Expression -> Elm.Expression)
+    -> Elm.Expression
+    -> Elm.Expression
     -> Elm.Expression
 request requestArg requestArg0 requestArg1 requestArg2 requestArg3 =
     Elm.apply
@@ -162,11 +167,11 @@ request requestArg requestArg0 requestArg1 requestArg2 requestArg3 =
                     )
             }
         )
-        [ Elm.functionReduced "requestUnpack" requestArg
+        [ requestArg
         , requestArg0
-        , Elm.string requestArg1
+        , requestArg1
         , requestArg2
-        , Elm.functionReduced "requestUnpack" requestArg3
+        , requestArg3
         ]
 
 
@@ -246,14 +251,15 @@ make_ =
 caseOf_ :
     { error :
         Elm.Expression
-        -> { errorTags_0_0
-            | timeout : Elm.Expression
-            , decodeError : Elm.Expression -> Elm.Expression
-            , clientError : Elm.Expression -> Elm.Expression
-            , serverError : Elm.Expression -> Elm.Expression
-            , serverTooBusy : Elm.Expression -> Elm.Expression
-            , eOS : Elm.Expression -> Elm.Expression
-        }
+        ->
+            { errorTags_0_0
+                | timeout : Elm.Expression
+                , decodeError : Elm.Expression -> Elm.Expression
+                , clientError : Elm.Expression -> Elm.Expression
+                , serverError : Elm.Expression -> Elm.Expression
+                , serverTooBusy : Elm.Expression -> Elm.Expression
+                , eOS : Elm.Expression -> Elm.Expression
+            }
         -> Elm.Expression
     }
 caseOf_ =
@@ -514,3 +520,4 @@ values_ =
                     )
             }
     }
+

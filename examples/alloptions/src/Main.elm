@@ -1,6 +1,5 @@
 module Main exposing (..)
 
-import AlloptionsRpc
 import Browser
 import Bytes exposing (Bytes)
 import Html exposing (Html, a, div, h1, h3, li, p, text, ul)
@@ -13,6 +12,10 @@ import Nats.Socket
 import Nats.Sub
 import NatsPorts
 import Nrpc
+import Nrpc.Main
+import Nrpc.Main.NoRequestService
+import Nrpc.Main.SvcCustomSubject
+import Nrpc.Main.SvcSubjectParams
 import Random
 import Time
 

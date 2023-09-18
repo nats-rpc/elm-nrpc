@@ -64,19 +64,19 @@ init flags =
             case Generate.generate request of
                 Ok fileList ->
                     { error = ""
-                    , supportedFeatures = Int64.fromInts 0 0
+                    , supportedFeatures = Int64.fromInts 0 3
                     , file = fileList
                     }
 
                 Err err ->
                     { error = err
-                    , supportedFeatures = Int64.fromInts 0 0
+                    , supportedFeatures = Int64.fromInts 0 3
                     , file = []
                     }
 
         Err err ->
             { error = Generate.errToString err
-            , supportedFeatures = Int64.fromInts 0 0
+            , supportedFeatures = Int64.fromInts 0 3
             , file = []
             }
       )

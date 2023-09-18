@@ -1,15 +1,17 @@
-module Gen.String exposing (all, annotation_, any, append, call_, concat, cons, contains, dropLeft, dropRight, endsWith, filter, foldl, foldr, fromChar, fromFloat, fromInt, fromList, indexes, indices, isEmpty, join, left, length, lines, map, moduleName_, pad, padLeft, padRight, repeat, replace, reverse, right, slice, split, startsWith, toFloat, toInt, toList, toLower, toUpper, trim, trimLeft, trimRight, uncons, values_, words)
+module Gen.String exposing (moduleName_, isEmpty, length, reverse, repeat, replace, append, concat, split, join, words, lines, slice, left, right, dropLeft, dropRight, contains, startsWith, endsWith, indexes, indices, toInt, fromInt, toFloat, fromFloat, fromChar, cons, uncons, toList, fromList, toUpper, toLower, pad, padLeft, padRight, trim, trimLeft, trimRight, map, filter, foldl, foldr, any, all, annotation_, call_, values_)
 
-{-| 
+{-|
+
 @docs moduleName_, isEmpty, length, reverse, repeat, replace, append, concat, split, join, words, lines, slice, left, right, dropLeft, dropRight, contains, startsWith, endsWith, indexes, indices, toInt, fromInt, toFloat, fromFloat, fromChar, cons, uncons, toList, fromList, toUpper, toLower, pad, padLeft, padRight, trim, trimLeft, trimRight, map, filter, foldl, foldr, any, all, annotation_, call_, values_
--}
 
+-}
 
 import Elm
 import Elm.Annotation as Type
 
 
-{-| The name of this module. -}
+{-| The name of this module.
+-}
 moduleName_ : List String
 moduleName_ =
     [ "String" ]
@@ -18,9 +20,11 @@ moduleName_ =
 {-| Determine if a string is empty.
 
     isEmpty "" == True
+
     isEmpty "the world" == False
 
 isEmpty: String -> Bool
+
 -}
 isEmpty : String -> Elm.Expression
 isEmpty isEmptyArg =
@@ -37,9 +41,11 @@ isEmpty isEmptyArg =
 {-| Get the length of a string.
 
     length "innumerable" == 11
+
     length "" == 0
 
 length: String -> Int
+
 -}
 length : String -> Elm.Expression
 length lengthArg =
@@ -58,6 +64,7 @@ length lengthArg =
     reverse "stressed" == "desserts"
 
 reverse: String -> String
+
 -}
 reverse : String -> Elm.Expression
 reverse reverseArg =
@@ -71,11 +78,12 @@ reverse reverseArg =
         [ Elm.string reverseArg ]
 
 
-{-| Repeat a string *n* times.
+{-| Repeat a string _n_ times.
 
     repeat 3 "ha" == "hahaha"
 
 repeat: Int -> String -> String
+
 -}
 repeat : Int -> String -> Elm.Expression
 repeat repeatArg repeatArg0 =
@@ -93,7 +101,8 @@ repeat repeatArg repeatArg0 =
 {-| Replace all occurrences of some substring.
 
     replace "." "-" "Json.Decode.succeed" == "Json-Decode-succeed"
-    replace "," "/" "a,b,c,d,e"           == "a/b/c/d/e"
+
+    replace "," "/" "a,b,c,d,e" == "a/b/c/d/e"
 
 **Note:** If you need more advanced replacements, check out the
 [`elm/parser`][parser] or [`elm/regex`][regex] package.
@@ -102,6 +111,7 @@ repeat repeatArg repeatArg0 =
 [regex]: /packages/elm/regex/latest
 
 replace: String -> String -> String -> String
+
 -}
 replace : String -> String -> String -> Elm.Expression
 replace replaceArg replaceArg0 replaceArg1 =
@@ -129,6 +139,7 @@ to do this.
     append "butter" "fly" == "butterfly"
 
 append: String -> String -> String
+
 -}
 append : String -> String -> Elm.Expression
 append appendArg appendArg0 =
@@ -145,9 +156,10 @@ append appendArg appendArg0 =
 
 {-| Concatenate many strings into one.
 
-    concat ["never","the","less"] == "nevertheless"
+    concat [ "never", "the", "less" ] == "nevertheless"
 
 concat: List String -> String
+
 -}
 concat : List String -> Elm.Expression
 concat concatArg =
@@ -164,10 +176,12 @@ concat concatArg =
 
 {-| Split a string using a given separator.
 
-    split "," "cat,dog,cow"        == ["cat","dog","cow"]
-    split "/" "home/evan/Desktop/" == ["home","evan","Desktop", ""]
+    split "," "cat,dog,cow" == [ "cat", "dog", "cow" ]
+
+    split "/" "home/evan/Desktop/" == [ "home", "evan", "Desktop", "" ]
 
 split: String -> String -> List String
+
 -}
 split : String -> String -> Elm.Expression
 split splitArg splitArg0 =
@@ -188,13 +202,16 @@ split splitArg splitArg0 =
 
 {-| Put many strings together with a given separator.
 
-    join "a" ["H","w","ii","n"]        == "Hawaiian"
-    join " " ["cat","dog","cow"]       == "cat dog cow"
-    join "/" ["home","evan","Desktop"] == "home/evan/Desktop"
+    join "a" [ "H", "w", "ii", "n" ] == "Hawaiian"
+
+    join " " [ "cat", "dog", "cow" ] == "cat dog cow"
+
+    join "/" [ "home", "evan", "Desktop" ] == "home/evan/Desktop"
 
 join: String -> List String -> String
+
 -}
-join : String -> List String -> Elm.Expression
+join : Elm.Expression -> Elm.Expression -> Elm.Expression
 join joinArg joinArg0 =
     Elm.apply
         (Elm.value
@@ -208,14 +225,15 @@ join joinArg joinArg0 =
                     )
             }
         )
-        [ Elm.string joinArg, Elm.list (List.map Elm.string joinArg0) ]
+        [ joinArg, joinArg0 ]
 
 
 {-| Break a string into words, splitting on chunks of whitespace.
 
-    words "How are \t you? \n Good?" == ["How","are","you?","Good?"]
+    words "How are \t you? \n Good?" == [ "How", "are", "you?", "Good?" ]
 
 words: String -> List String
+
 -}
 words : String -> Elm.Expression
 words wordsArg =
@@ -232,9 +250,10 @@ words wordsArg =
 
 {-| Break a string into lines, splitting on newlines.
 
-    lines "How are you?\nGood?" == ["How are you?", "Good?"]
+    lines "How are you?\nGood?" == [ "How are you?", "Good?" ]
 
 lines: String -> List String
+
 -}
 lines : String -> Elm.Expression
 lines linesArg =
@@ -250,14 +269,18 @@ lines linesArg =
 
 
 {-| Take a substring given a start and end index. Negative indexes
-are taken starting from the *end* of the list.
+are taken starting from the _end_ of the list.
 
-    slice  7  9 "snakes on a plane!" == "on"
-    slice  0  6 "snakes on a plane!" == "snakes"
-    slice  0 -7 "snakes on a plane!" == "snakes on a"
+    slice 7 9 "snakes on a plane!" == "on"
+
+    slice 0 6 "snakes on a plane!" == "snakes"
+
+    slice 0 -7 "snakes on a plane!" == "snakes on a"
+
     slice -6 -1 "snakes on a plane!" == "plane"
 
 slice: Int -> Int -> String -> String
+
 -}
 slice : Int -> Int -> String -> Elm.Expression
 slice sliceArg sliceArg0 sliceArg1 =
@@ -276,11 +299,12 @@ slice sliceArg sliceArg0 sliceArg1 =
         [ Elm.int sliceArg, Elm.int sliceArg0, Elm.string sliceArg1 ]
 
 
-{-| Take *n* characters from the left side of a string.
+{-| Take _n_ characters from the left side of a string.
 
     left 2 "Mulder" == "Mu"
 
 left: Int -> String -> String
+
 -}
 left : Int -> String -> Elm.Expression
 left leftArg leftArg0 =
@@ -295,11 +319,12 @@ left leftArg leftArg0 =
         [ Elm.int leftArg, Elm.string leftArg0 ]
 
 
-{-| Take *n* characters from the right side of a string.
+{-| Take _n_ characters from the right side of a string.
 
     right 2 "Scully" == "ly"
 
 right: Int -> String -> String
+
 -}
 right : Int -> String -> Elm.Expression
 right rightArg rightArg0 =
@@ -314,11 +339,12 @@ right rightArg rightArg0 =
         [ Elm.int rightArg, Elm.string rightArg0 ]
 
 
-{-| Drop *n* characters from the left side of a string.
+{-| Drop _n_ characters from the left side of a string.
 
     dropLeft 2 "The Lone Gunmen" == "e Lone Gunmen"
 
 dropLeft: Int -> String -> String
+
 -}
 dropLeft : Int -> String -> Elm.Expression
 dropLeft dropLeftArg dropLeftArg0 =
@@ -333,11 +359,12 @@ dropLeft dropLeftArg dropLeftArg0 =
         [ Elm.int dropLeftArg, Elm.string dropLeftArg0 ]
 
 
-{-| Drop *n* characters from the right side of a string.
+{-| Drop _n_ characters from the right side of a string.
 
     dropRight 2 "Cigarette Smoking Man" == "Cigarette Smoking M"
 
 dropRight: Int -> String -> String
+
 -}
 dropRight : Int -> String -> Elm.Expression
 dropRight dropRightArg dropRightArg0 =
@@ -355,10 +382,13 @@ dropRight dropRightArg dropRightArg0 =
 {-| See if the second string contains the first one.
 
     contains "the" "theory" == True
+
     contains "hat" "theory" == False
+
     contains "THE" "theory" == False
 
 contains: String -> String -> Bool
+
 -}
 contains : String -> String -> Elm.Expression
 contains containsArg containsArg0 =
@@ -376,9 +406,11 @@ contains containsArg containsArg0 =
 {-| See if the second string starts with the first one.
 
     startsWith "the" "theory" == True
+
     startsWith "ory" "theory" == False
 
 startsWith: String -> String -> Bool
+
 -}
 startsWith : String -> String -> Elm.Expression
 startsWith startsWithArg startsWithArg0 =
@@ -396,9 +428,11 @@ startsWith startsWithArg startsWithArg0 =
 {-| See if the second string ends with the first one.
 
     endsWith "the" "theory" == False
+
     endsWith "ory" "theory" == True
 
 endsWith: String -> String -> Bool
+
 -}
 endsWith : String -> String -> Elm.Expression
 endsWith endsWithArg endsWithArg0 =
@@ -415,11 +449,14 @@ endsWith endsWithArg endsWithArg0 =
 
 {-| Get all of the indexes for a substring in another string.
 
-    indexes "i" "Mississippi"   == [1,4,7,10]
-    indexes "ss" "Mississippi"  == [2,5]
+    indexes "i" "Mississippi" == [ 1, 4, 7, 10 ]
+
+    indexes "ss" "Mississippi" == [ 2, 5 ]
+
     indexes "needle" "haystack" == []
 
 indexes: String -> String -> List Int
+
 -}
 indexes : String -> String -> Elm.Expression
 indexes indexesArg indexesArg0 =
@@ -441,6 +478,7 @@ indexes indexesArg indexesArg0 =
 {-| Alias for `indexes`.
 
 indices: String -> String -> List Int
+
 -}
 indices : String -> String -> Elm.Expression
 indices indicesArg indicesArg0 =
@@ -462,17 +500,22 @@ indices indicesArg indicesArg0 =
 {-| Try to convert a string into an int, failing on improperly formatted strings.
 
     String.toInt "123" == Just 123
+
     String.toInt "-42" == Just -42
+
     String.toInt "3.1" == Nothing
+
     String.toInt "31a" == Nothing
 
 If you are extracting a number from some raw user input, you will typically
 want to use [`Maybe.withDefault`](Maybe#withDefault) to handle bad data:
 
     Maybe.withDefault 0 (String.toInt "42") == 42
+
     Maybe.withDefault 0 (String.toInt "ab") == 0
 
 toInt: String -> Maybe Int
+
 -}
 toInt : String -> Elm.Expression
 toInt toIntArg =
@@ -490,12 +533,14 @@ toInt toIntArg =
 {-| Convert an `Int` to a `String`.
 
     String.fromInt 123 == "123"
+
     String.fromInt -42 == "-42"
 
-Check out [`Debug.toString`](Debug#toString) to convert *any* value to a string
+Check out [`Debug.toString`](Debug#toString) to convert _any_ value to a string
 for debugging purposes.
 
 fromInt: Int -> String
+
 -}
 fromInt : Int -> Elm.Expression
 fromInt fromIntArg =
@@ -512,17 +557,22 @@ fromInt fromIntArg =
 {-| Try to convert a string into a float, failing on improperly formatted strings.
 
     String.toFloat "123" == Just 123.0
+
     String.toFloat "-42" == Just -42.0
+
     String.toFloat "3.1" == Just 3.1
+
     String.toFloat "31a" == Nothing
 
 If you are extracting a number from some raw user input, you will typically
 want to use [`Maybe.withDefault`](Maybe#withDefault) to handle bad data:
 
     Maybe.withDefault 0 (String.toFloat "42.5") == 42.5
+
     Maybe.withDefault 0 (String.toFloat "cats") == 0
 
 toFloat: String -> Maybe Float
+
 -}
 toFloat : String -> Elm.Expression
 toFloat toFloatArg =
@@ -540,13 +590,16 @@ toFloat toFloatArg =
 {-| Convert a `Float` to a `String`.
 
     String.fromFloat 123 == "123"
+
     String.fromFloat -42 == "-42"
+
     String.fromFloat 3.9 == "3.9"
 
-Check out [`Debug.toString`](Debug#toString) to convert *any* value to a string
+Check out [`Debug.toString`](Debug#toString) to convert _any_ value to a string
 for debugging purposes.
 
 fromFloat: Float -> String
+
 -}
 fromFloat : Float -> Elm.Expression
 fromFloat fromFloatArg =
@@ -565,6 +618,7 @@ fromFloat fromFloatArg =
     fromChar 'a' == "a"
 
 fromChar: Char.Char -> String
+
 -}
 fromChar : Char.Char -> Elm.Expression
 fromChar fromCharArg =
@@ -583,6 +637,7 @@ fromChar fromCharArg =
     cons 'T' "he truth is out there" == "The truth is out there"
 
 cons: Char.Char -> String -> String
+
 -}
 cons : Char.Char -> String -> Elm.Expression
 cons consArg consArg0 =
@@ -600,10 +655,12 @@ cons consArg consArg0 =
 {-| Split a non-empty string into its head and tail. This lets you
 pattern match on strings exactly as you would with lists.
 
-    uncons "abc" == Just ('a',"bc")
-    uncons ""    == Nothing
+    uncons "abc" == Just ( 'a', "bc" )
+
+    uncons "" == Nothing
 
 uncons: String -> Maybe ( Char.Char, String )
+
 -}
 uncons : String -> Elm.Expression
 uncons unconsArg =
@@ -624,10 +681,12 @@ uncons unconsArg =
 
 {-| Convert a string to a list of characters.
 
-    toList "abc" == ['a','b','c']
-    toList "🙈🙉🙊" == ['🙈','🙉','🙊']
+    toList "abc" == [ 'a', 'b', 'c' ]
+
+    toList "🙈🙉🙊" == [ '🙈', '🙉', '🙊' ]
 
 toList: String -> List Char.Char
+
 -}
 toList : String -> Elm.Expression
 toList toListArg =
@@ -646,10 +705,12 @@ toList toListArg =
 want to create a string primarily by consing, perhaps for decoding
 something.
 
-    fromList ['a','b','c'] == "abc"
-    fromList ['🙈','🙉','🙊'] == "🙈🙉🙊"
+    fromList [ 'a', 'b', 'c' ] == "abc"
+
+    fromList [ '🙈', '🙉', '🙊' ] == "🙈🙉🙊"
 
 fromList: List Char.Char -> String
+
 -}
 fromList : List Char.Char -> Elm.Expression
 fromList fromListArg =
@@ -670,6 +731,7 @@ and VIRTUAL YELLING.
     toUpper "skinner" == "SKINNER"
 
 toUpper: String -> String
+
 -}
 toUpper : String -> Elm.Expression
 toUpper toUpperArg =
@@ -688,6 +750,7 @@ toUpper toUpperArg =
     toLower "X-FILES" == "x-files"
 
 toLower: String -> String
+
 -}
 toLower : String -> Elm.Expression
 toLower toLowerArg =
@@ -703,11 +766,14 @@ toLower toLowerArg =
 
 {-| Pad a string on both sides until it has a given length.
 
-    pad 5 ' ' "1"   == "  1  "
-    pad 5 ' ' "11"  == "  11 "
+    pad 5 ' ' "1" == "  1  "
+
+    pad 5 ' ' "11" == "  11 "
+
     pad 5 ' ' "121" == " 121 "
 
 pad: Int -> Char.Char -> String -> String
+
 -}
 pad : Int -> Char.Char -> String -> Elm.Expression
 pad padArg padArg0 padArg1 =
@@ -728,11 +794,14 @@ pad padArg padArg0 padArg1 =
 
 {-| Pad a string on the left until it has a given length.
 
-    padLeft 5 '.' "1"   == "....1"
-    padLeft 5 '.' "11"  == "...11"
+    padLeft 5 '.' "1" == "....1"
+
+    padLeft 5 '.' "11" == "...11"
+
     padLeft 5 '.' "121" == "..121"
 
 padLeft: Int -> Char.Char -> String -> String
+
 -}
 padLeft : Int -> Char.Char -> String -> Elm.Expression
 padLeft padLeftArg padLeftArg0 padLeftArg1 =
@@ -753,11 +822,14 @@ padLeft padLeftArg padLeftArg0 padLeftArg1 =
 
 {-| Pad a string on the right until it has a given length.
 
-    padRight 5 '.' "1"   == "1...."
-    padRight 5 '.' "11"  == "11..."
+    padRight 5 '.' "1" == "1...."
+
+    padRight 5 '.' "11" == "11..."
+
     padRight 5 '.' "121" == "121.."
 
 padRight: Int -> Char.Char -> String -> String
+
 -}
 padRight : Int -> Char.Char -> String -> Elm.Expression
 padRight padRightArg padRightArg0 padRightArg1 =
@@ -781,6 +853,7 @@ padRight padRightArg padRightArg0 padRightArg1 =
     trim "  hats  \n" == "hats"
 
 trim: String -> String
+
 -}
 trim : String -> Elm.Expression
 trim trimArg =
@@ -799,6 +872,7 @@ trim trimArg =
     trimLeft "  hats  \n" == "hats  \n"
 
 trimLeft: String -> String
+
 -}
 trimLeft : String -> Elm.Expression
 trimLeft trimLeftArg =
@@ -817,6 +891,7 @@ trimLeft trimLeftArg =
     trimRight "  hats  \n" == "  hats"
 
 trimRight: String -> String
+
 -}
 trimRight : String -> Elm.Expression
 trimRight trimRightArg =
@@ -832,9 +907,19 @@ trimRight trimRightArg =
 
 {-| Transform every character in a string
 
-    map (\c -> if c == '/' then '.' else c) "a/b/c" == "a.b.c"
+    map
+        (\c ->
+            if c == '/' then
+                '.'
+
+            else
+                c
+        )
+        "a/b/c"
+        == "a.b.c"
 
 map: (Char.Char -> Char.Char) -> String -> String
+
 -}
 map : (Elm.Expression -> Elm.Expression) -> String -> Elm.Expression
 map mapArg mapArg0 =
@@ -858,6 +943,7 @@ map mapArg mapArg0 =
     filter isDigit "R2-D2" == "22"
 
 filter: (Char.Char -> Bool) -> String -> String
+
 -}
 filter : (Elm.Expression -> Elm.Expression) -> String -> Elm.Expression
 filter filterArg filterArg0 =
@@ -881,6 +967,7 @@ filter filterArg filterArg0 =
     foldl cons "" "time" == "emit"
 
 foldl: (Char.Char -> b -> b) -> b -> String -> b
+
 -}
 foldl :
     (Elm.Expression -> Elm.Expression -> Elm.Expression)
@@ -920,6 +1007,7 @@ foldl foldlArg foldlArg0 foldlArg1 =
     foldr cons "" "time" == "time"
 
 foldr: (Char.Char -> b -> b) -> b -> String -> b
+
 -}
 foldr :
     (Elm.Expression -> Elm.Expression -> Elm.Expression)
@@ -954,13 +1042,16 @@ foldr foldrArg foldrArg0 foldrArg1 =
         ]
 
 
-{-| Determine whether *any* characters pass the test.
+{-| Determine whether _any_ characters pass the test.
 
     any isDigit "90210" == True
+
     any isDigit "R2-D2" == True
+
     any isDigit "heart" == False
 
 any: (Char.Char -> Bool) -> String -> Bool
+
 -}
 any : (Elm.Expression -> Elm.Expression) -> String -> Elm.Expression
 any anyArg anyArg0 =
@@ -979,13 +1070,16 @@ any anyArg anyArg0 =
         [ Elm.functionReduced "anyUnpack" anyArg, Elm.string anyArg0 ]
 
 
-{-| Determine whether *all* characters pass the test.
+{-| Determine whether _all_ characters pass the test.
 
     all isDigit "90210" == True
+
     all isDigit "R2-D2" == False
+
     all isDigit "heart" == False
 
 all: (Char.Char -> Bool) -> String -> Bool
+
 -}
 all : (Elm.Expression -> Elm.Expression) -> String -> Elm.Expression
 all allArg allArg0 =
@@ -1102,8 +1196,7 @@ call_ =
                     , name = "repeat"
                     , annotation =
                         Just
-                            (Type.function [ Type.int, Type.string ] Type.string
-                            )
+                            (Type.function [ Type.int, Type.string ] Type.string)
                     }
                 )
                 [ repeatArg, repeatArg0 ]
@@ -1145,8 +1238,7 @@ call_ =
                     , name = "concat"
                     , annotation =
                         Just
-                            (Type.function [ Type.list Type.string ] Type.string
-                            )
+                            (Type.function [ Type.list Type.string ] Type.string)
                     }
                 )
                 [ concatArg ]
@@ -1233,8 +1325,7 @@ call_ =
                     , name = "left"
                     , annotation =
                         Just
-                            (Type.function [ Type.int, Type.string ] Type.string
-                            )
+                            (Type.function [ Type.int, Type.string ] Type.string)
                     }
                 )
                 [ leftArg, leftArg0 ]
@@ -1246,8 +1337,7 @@ call_ =
                     , name = "right"
                     , annotation =
                         Just
-                            (Type.function [ Type.int, Type.string ] Type.string
-                            )
+                            (Type.function [ Type.int, Type.string ] Type.string)
                     }
                 )
                 [ rightArg, rightArg0 ]
@@ -1259,8 +1349,7 @@ call_ =
                     , name = "dropLeft"
                     , annotation =
                         Just
-                            (Type.function [ Type.int, Type.string ] Type.string
-                            )
+                            (Type.function [ Type.int, Type.string ] Type.string)
                     }
                 )
                 [ dropLeftArg, dropLeftArg0 ]
@@ -1272,8 +1361,7 @@ call_ =
                     , name = "dropRight"
                     , annotation =
                         Just
-                            (Type.function [ Type.int, Type.string ] Type.string
-                            )
+                            (Type.function [ Type.int, Type.string ] Type.string)
                     }
                 )
                 [ dropRightArg, dropRightArg0 ]
@@ -1360,8 +1448,7 @@ call_ =
                     , name = "toInt"
                     , annotation =
                         Just
-                            (Type.function [ Type.string ] (Type.maybe Type.int)
-                            )
+                            (Type.function [ Type.string ] (Type.maybe Type.int))
                     }
                 )
                 [ toIntArg ]
@@ -1450,8 +1537,7 @@ call_ =
                     , name = "toList"
                     , annotation =
                         Just
-                            (Type.function [ Type.string ] (Type.list Type.char)
-                            )
+                            (Type.function [ Type.string ] (Type.list Type.char))
                     }
                 )
                 [ toListArg ]
@@ -2096,3 +2182,4 @@ values_ =
                     )
             }
     }
+
