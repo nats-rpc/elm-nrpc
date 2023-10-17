@@ -4688,77 +4688,6 @@ var _Regex_splitAtMost = F3(function(n, re, str)
 var _Regex_infinity = Infinity;
 
 
-var wireRefs = (function () {
-  var refs = new Map();
-  var counter = 0; // uInt32 max
-  var f = {}
-  f.add = function(obj) {
-    counter++;
-    refs.set(counter, obj);
-    return counter;
-  }
-  f.getFinal = function(k) {
-    let v = refs.get(k);
-    refs.delete(k);
-    return v;
-  }
-  f.clear = function() {
-    refs = new Map();
-  };
-  f.all = function() {
-    return [refs.keys(), refs];
-  }
-  return f;
-})();
-
-var _LamderaCodecs_encodeWithRef = function(a) {
-  return wireRefs.add(a);
-}
-
-var _LamderaCodecs_decodeWithRef = function(ref) {
-  return wireRefs.getFinal(ref);
-}
-
-var _LamderaCodecs_encodeBytes = function(s) { return _Lamdera_Json_wrap(s); }
-
-function _Lamdera_Json_wrap(value) { return { $: 0, a: value }; }
-function _Lamdera_Json_wrap_UNUSED(value) { return value; }
-
-function _LamderaCodecs_Json_decodePrim(decoder) {
-  return { $: 0, a: decoder };
-}
-
-var _LamderaCodecs_decodeBytes = _Json_decodePrim(function(value) {
-  return (typeof value === 'object' && value instanceof DataView)
-    ? $elm$core$Result$Ok(value)
-    : _Json_expecting('a DataView', value) ;
-    // : console.log('error: expecting DataView, got', value) ;
-});
-
-var _LamderaCodecs_debug = function(s) {
-  console.log(s);
-  return _Utils_Tuple0;
-}
-
-// Duplicate of _Bytes_decode that expects all bytes to be consumed,
-// otherwise it fails to decode.
-var _LamderaCodecs_bytesDecodeStrict = F2(function(decoder, bytes)
-{
-  try {
-    var res = A2(decoder, bytes, 0);
-    const w = bytes.byteLength;
-    if (w !== res.a) {
-      // For now just log issues, in future we'll actually fail on this case
-      console.log(`❌ bytesDecodeStrict did not consume all bytes: length:${w}, consumed:${res.a}`, res.b, new Uint8Array(bytes.buffer));
-    }
-    return $elm$core$Maybe$Just(res.b);
-  } catch(e) {
-    console.log('❌ bytesDecodeStrict unexpected error:', e);
-    return $elm$core$Maybe$Nothing;
-  }
-});
-
-
 
 function _Time_now(millisToPosix)
 {
@@ -5883,6 +5812,14 @@ var $author$project$Nats$Socket$new = F2(
 	});
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $author$project$Nats$Socket$withDebug = F2(
+	function (value, _v0) {
+		var props = _v0.a;
+		return $author$project$Nats$Internal$Types$Socket(
+			_Utils_update(
+				props,
+				{debug: value}));
+	});
 var $author$project$Main$init = function (_v0) {
 	var now = _v0.now;
 	return _Utils_Tuple2(
@@ -5892,7 +5829,12 @@ var $author$project$Main$init = function (_v0) {
 				$elm$random$Random$initialSeed(now),
 				$elm$time$Time$millisToPosix(now)),
 			serverInfo: $elm$core$Maybe$Nothing,
-			socket: A2($author$project$Nats$Socket$new, '0', 'ws://localhost:8087')
+			simpleStringReply: $elm$core$Maybe$Nothing,
+			socket: A2(
+				$author$project$Nats$Socket$withDebug,
+				true,
+				A2($author$project$Nats$Socket$new, '0', 'ws://localhost:8087')),
+			voidReply: $elm$core$Maybe$Nothing
 		},
 		$elm$core$Platform$Cmd$none);
 };
@@ -5903,39 +5845,9 @@ var $author$project$Main$NatsMsg = function (a) {
 var $author$project$Nats$Internal$Types$Config = function (a) {
 	return {$: 'Config', a: a};
 };
-var $author$project$Nats$Protocol$Error = function (a) {
-	return {$: 'Error', a: a};
-};
-var $author$project$Nats$Protocol$MSG = F2(
-	function (a, b) {
-		return {$: 'MSG', a: a, b: b};
-	});
-var $author$project$Nats$Protocol$Operation = function (a) {
-	return {$: 'Operation', a: a};
-};
-var $author$project$Nats$Protocol$Partial = function (a) {
-	return {$: 'Partial', a: a};
-};
-var $author$project$Nats$Protocol$PartialOperation = function (a) {
-	return {$: 'PartialOperation', a: a};
-};
-var $elm$bytes$Bytes$Decode$Decoder = function (a) {
+var $chelovek0v$bbase64$Base64$Decode$Decoder = function (a) {
 	return {$: 'Decoder', a: a};
 };
-var $elm$bytes$Bytes$Decode$andThen = F2(
-	function (callback, _v0) {
-		var decodeA = _v0.a;
-		return $elm$bytes$Bytes$Decode$Decoder(
-			F2(
-				function (bites, offset) {
-					var _v1 = A2(decodeA, bites, offset);
-					var newOffset = _v1.a;
-					var a = _v1.b;
-					var _v2 = callback(a);
-					var decodeB = _v2.a;
-					return A2(decodeB, bites, newOffset);
-				}));
-	});
 var $elm$bytes$Bytes$Encode$getWidth = function (builder) {
 	switch (builder.$) {
 		case 'I8':
@@ -6059,21 +5971,489 @@ var $elm$bytes$Bytes$Encode$writeSequence = F3(
 			}
 		}
 	});
-var $elm$bytes$Bytes$Decode$bytes = function (n) {
-	return $elm$bytes$Bytes$Decode$Decoder(
-		_Bytes_read_bytes(n));
-};
-var $elm$bytes$Bytes$Encode$Bytes = function (a) {
-	return {$: 'Bytes', a: a};
-};
-var $elm$bytes$Bytes$Encode$bytes = $elm$bytes$Bytes$Encode$Bytes;
-var $author$project$Nats$Protocol$cr = '\u000D\n';
-var $elm$bytes$Bytes$Decode$decode = F2(
-	function (_v0, bs) {
-		var decoder = _v0.a;
-		return A2(_Bytes_decode, decoder, bs);
-	});
 var $elm$bytes$Bytes$Encode$encode = _Bytes_encode;
+var $elm$bytes$Bytes$Encode$Seq = F2(
+	function (a, b) {
+		return {$: 'Seq', a: a, b: b};
+	});
+var $elm$bytes$Bytes$Encode$getWidths = F2(
+	function (width, builders) {
+		getWidths:
+		while (true) {
+			if (!builders.b) {
+				return width;
+			} else {
+				var b = builders.a;
+				var bs = builders.b;
+				var $temp$width = width + $elm$bytes$Bytes$Encode$getWidth(b),
+					$temp$builders = bs;
+				width = $temp$width;
+				builders = $temp$builders;
+				continue getWidths;
+			}
+		}
+	});
+var $elm$bytes$Bytes$Encode$sequence = function (builders) {
+	return A2(
+		$elm$bytes$Bytes$Encode$Seq,
+		A2($elm$bytes$Bytes$Encode$getWidths, 0, builders),
+		builders);
+};
+var $chelovek0v$bbase64$Base64$Decode$encodeBytes = function (encoders) {
+	return $elm$bytes$Bytes$Encode$encode(
+		$elm$bytes$Bytes$Encode$sequence(
+			$elm$core$List$reverse(encoders)));
+};
+var $elm$core$Result$andThen = F2(
+	function (callback, result) {
+		if (result.$ === 'Ok') {
+			var value = result.a;
+			return callback(value);
+		} else {
+			var msg = result.a;
+			return $elm$core$Result$Err(msg);
+		}
+	});
+var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
+var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
+var $elm$core$Dict$Black = {$: 'Black'};
+var $elm$core$Dict$RBNode_elm_builtin = F5(
+	function (a, b, c, d, e) {
+		return {$: 'RBNode_elm_builtin', a: a, b: b, c: c, d: d, e: e};
+	});
+var $elm$core$Dict$Red = {$: 'Red'};
+var $elm$core$Dict$balance = F5(
+	function (color, key, value, left, right) {
+		if ((right.$ === 'RBNode_elm_builtin') && (right.a.$ === 'Red')) {
+			var _v1 = right.a;
+			var rK = right.b;
+			var rV = right.c;
+			var rLeft = right.d;
+			var rRight = right.e;
+			if ((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) {
+				var _v3 = left.a;
+				var lK = left.b;
+				var lV = left.c;
+				var lLeft = left.d;
+				var lRight = left.e;
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Red,
+					key,
+					value,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, lK, lV, lLeft, lRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, rK, rV, rLeft, rRight));
+			} else {
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					color,
+					rK,
+					rV,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, key, value, left, rLeft),
+					rRight);
+			}
+		} else {
+			if ((((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) && (left.d.$ === 'RBNode_elm_builtin')) && (left.d.a.$ === 'Red')) {
+				var _v5 = left.a;
+				var lK = left.b;
+				var lV = left.c;
+				var _v6 = left.d;
+				var _v7 = _v6.a;
+				var llK = _v6.b;
+				var llV = _v6.c;
+				var llLeft = _v6.d;
+				var llRight = _v6.e;
+				var lRight = left.e;
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Red,
+					lK,
+					lV,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, llK, llV, llLeft, llRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, key, value, lRight, right));
+			} else {
+				return A5($elm$core$Dict$RBNode_elm_builtin, color, key, value, left, right);
+			}
+		}
+	});
+var $elm$core$Basics$compare = _Utils_compare;
+var $elm$core$Dict$insertHelp = F3(
+	function (key, value, dict) {
+		if (dict.$ === 'RBEmpty_elm_builtin') {
+			return A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, key, value, $elm$core$Dict$RBEmpty_elm_builtin, $elm$core$Dict$RBEmpty_elm_builtin);
+		} else {
+			var nColor = dict.a;
+			var nKey = dict.b;
+			var nValue = dict.c;
+			var nLeft = dict.d;
+			var nRight = dict.e;
+			var _v1 = A2($elm$core$Basics$compare, key, nKey);
+			switch (_v1.$) {
+				case 'LT':
+					return A5(
+						$elm$core$Dict$balance,
+						nColor,
+						nKey,
+						nValue,
+						A3($elm$core$Dict$insertHelp, key, value, nLeft),
+						nRight);
+				case 'EQ':
+					return A5($elm$core$Dict$RBNode_elm_builtin, nColor, nKey, value, nLeft, nRight);
+				default:
+					return A5(
+						$elm$core$Dict$balance,
+						nColor,
+						nKey,
+						nValue,
+						nLeft,
+						A3($elm$core$Dict$insertHelp, key, value, nRight));
+			}
+		}
+	});
+var $elm$core$Dict$insert = F3(
+	function (key, value, dict) {
+		var _v0 = A3($elm$core$Dict$insertHelp, key, value, dict);
+		if ((_v0.$ === 'RBNode_elm_builtin') && (_v0.a.$ === 'Red')) {
+			var _v1 = _v0.a;
+			var k = _v0.b;
+			var v = _v0.c;
+			var l = _v0.d;
+			var r = _v0.e;
+			return A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, k, v, l, r);
+		} else {
+			var x = _v0;
+			return x;
+		}
+	});
+var $elm$core$Dict$fromList = function (assocs) {
+	return A3(
+		$elm$core$List$foldl,
+		F2(
+			function (_v0, dict) {
+				var key = _v0.a;
+				var value = _v0.b;
+				return A3($elm$core$Dict$insert, key, value, dict);
+			}),
+		$elm$core$Dict$empty,
+		assocs);
+};
+var $chelovek0v$bbase64$Base64$Table$charToCodeMap = $elm$core$Dict$fromList(
+	_List_fromArray(
+		[
+			_Utils_Tuple2('A', 0),
+			_Utils_Tuple2('B', 1),
+			_Utils_Tuple2('C', 2),
+			_Utils_Tuple2('D', 3),
+			_Utils_Tuple2('E', 4),
+			_Utils_Tuple2('F', 5),
+			_Utils_Tuple2('G', 6),
+			_Utils_Tuple2('H', 7),
+			_Utils_Tuple2('I', 8),
+			_Utils_Tuple2('J', 9),
+			_Utils_Tuple2('K', 10),
+			_Utils_Tuple2('L', 11),
+			_Utils_Tuple2('M', 12),
+			_Utils_Tuple2('N', 13),
+			_Utils_Tuple2('O', 14),
+			_Utils_Tuple2('P', 15),
+			_Utils_Tuple2('Q', 16),
+			_Utils_Tuple2('R', 17),
+			_Utils_Tuple2('S', 18),
+			_Utils_Tuple2('T', 19),
+			_Utils_Tuple2('U', 20),
+			_Utils_Tuple2('V', 21),
+			_Utils_Tuple2('W', 22),
+			_Utils_Tuple2('X', 23),
+			_Utils_Tuple2('Y', 24),
+			_Utils_Tuple2('Z', 25),
+			_Utils_Tuple2('a', 26),
+			_Utils_Tuple2('b', 27),
+			_Utils_Tuple2('c', 28),
+			_Utils_Tuple2('d', 29),
+			_Utils_Tuple2('e', 30),
+			_Utils_Tuple2('f', 31),
+			_Utils_Tuple2('g', 32),
+			_Utils_Tuple2('h', 33),
+			_Utils_Tuple2('i', 34),
+			_Utils_Tuple2('j', 35),
+			_Utils_Tuple2('k', 36),
+			_Utils_Tuple2('l', 37),
+			_Utils_Tuple2('m', 38),
+			_Utils_Tuple2('n', 39),
+			_Utils_Tuple2('o', 40),
+			_Utils_Tuple2('p', 41),
+			_Utils_Tuple2('q', 42),
+			_Utils_Tuple2('r', 43),
+			_Utils_Tuple2('s', 44),
+			_Utils_Tuple2('t', 45),
+			_Utils_Tuple2('u', 46),
+			_Utils_Tuple2('v', 47),
+			_Utils_Tuple2('w', 48),
+			_Utils_Tuple2('x', 49),
+			_Utils_Tuple2('y', 50),
+			_Utils_Tuple2('z', 51),
+			_Utils_Tuple2('0', 52),
+			_Utils_Tuple2('1', 53),
+			_Utils_Tuple2('2', 54),
+			_Utils_Tuple2('3', 55),
+			_Utils_Tuple2('4', 56),
+			_Utils_Tuple2('5', 57),
+			_Utils_Tuple2('6', 58),
+			_Utils_Tuple2('7', 59),
+			_Utils_Tuple2('8', 60),
+			_Utils_Tuple2('9', 61),
+			_Utils_Tuple2('+', 62),
+			_Utils_Tuple2('/', 63)
+		]));
+var $elm$core$String$cons = _String_cons;
+var $elm$core$String$fromChar = function (_char) {
+	return A2($elm$core$String$cons, _char, '');
+};
+var $elm$core$Dict$get = F2(
+	function (targetKey, dict) {
+		get:
+		while (true) {
+			if (dict.$ === 'RBEmpty_elm_builtin') {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var _v1 = A2($elm$core$Basics$compare, targetKey, key);
+				switch (_v1.$) {
+					case 'LT':
+						var $temp$targetKey = targetKey,
+							$temp$dict = left;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+					case 'EQ':
+						return $elm$core$Maybe$Just(value);
+					default:
+						var $temp$targetKey = targetKey,
+							$temp$dict = right;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+				}
+			}
+		}
+	});
+var $chelovek0v$bbase64$Base64$Table$decode = function (_char) {
+	return A2(
+		$elm$core$Dict$get,
+		$elm$core$String$fromChar(_char),
+		$chelovek0v$bbase64$Base64$Table$charToCodeMap);
+};
+var $chelovek0v$bbase64$Base64$Shift$Shift2 = {$: 'Shift2'};
+var $chelovek0v$bbase64$Base64$Shift$Shift4 = {$: 'Shift4'};
+var $chelovek0v$bbase64$Base64$Shift$Shift6 = {$: 'Shift6'};
+var $chelovek0v$bbase64$Base64$Shift$Shift0 = {$: 'Shift0'};
+var $chelovek0v$bbase64$Base64$Shift$decodeNext = function (shift) {
+	switch (shift.$) {
+		case 'Shift0':
+			return $chelovek0v$bbase64$Base64$Shift$Shift2;
+		case 'Shift2':
+			return $chelovek0v$bbase64$Base64$Shift$Shift4;
+		case 'Shift4':
+			return $chelovek0v$bbase64$Base64$Shift$Shift6;
+		default:
+			return $chelovek0v$bbase64$Base64$Shift$Shift0;
+	}
+};
+var $elm$core$Bitwise$or = _Bitwise_or;
+var $chelovek0v$bbase64$Base64$Shift$toInt = function (shift) {
+	switch (shift.$) {
+		case 'Shift0':
+			return 0;
+		case 'Shift2':
+			return 2;
+		case 'Shift4':
+			return 4;
+		default:
+			return 6;
+	}
+};
+var $chelovek0v$bbase64$Base64$Shift$shiftRightZfBy = F2(
+	function (shift, value) {
+		return value >>> $chelovek0v$bbase64$Base64$Shift$toInt(shift);
+	});
+var $chelovek0v$bbase64$Base64$Decode$finishPartialByte = F3(
+	function (shift, sextet, partialByte) {
+		return partialByte | A2($chelovek0v$bbase64$Base64$Shift$shiftRightZfBy, shift, sextet);
+	});
+var $elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
+var $chelovek0v$bbase64$Base64$Shift$shiftLeftBy = F2(
+	function (shift, value) {
+		return value << $chelovek0v$bbase64$Base64$Shift$toInt(shift);
+	});
+var $elm$bytes$Bytes$Encode$U8 = function (a) {
+	return {$: 'U8', a: a};
+};
+var $elm$bytes$Bytes$Encode$unsignedInt8 = $elm$bytes$Bytes$Encode$U8;
+var $chelovek0v$bbase64$Base64$Decode$decodeStep = F2(
+	function (sextet, _v0) {
+		var shift = _v0.a;
+		var partialByte = _v0.b;
+		var deferredEncoders = _v0.c;
+		var nextBlankByte = function () {
+			switch (shift.$) {
+				case 'Shift0':
+					return A2($chelovek0v$bbase64$Base64$Shift$shiftLeftBy, $chelovek0v$bbase64$Base64$Shift$Shift2, sextet);
+				case 'Shift2':
+					return A2($chelovek0v$bbase64$Base64$Shift$shiftLeftBy, $chelovek0v$bbase64$Base64$Shift$Shift4, sextet);
+				case 'Shift4':
+					return A2($chelovek0v$bbase64$Base64$Shift$shiftLeftBy, $chelovek0v$bbase64$Base64$Shift$Shift6, sextet);
+				default:
+					return 0;
+			}
+		}();
+		var finishedByte = function () {
+			switch (shift.$) {
+				case 'Shift0':
+					return $elm$core$Maybe$Nothing;
+				case 'Shift2':
+					return $elm$core$Maybe$Just(
+						A3($chelovek0v$bbase64$Base64$Decode$finishPartialByte, $chelovek0v$bbase64$Base64$Shift$Shift4, sextet, partialByte));
+				case 'Shift4':
+					return $elm$core$Maybe$Just(
+						A3($chelovek0v$bbase64$Base64$Decode$finishPartialByte, $chelovek0v$bbase64$Base64$Shift$Shift2, sextet, partialByte));
+				default:
+					return $elm$core$Maybe$Just(partialByte | sextet);
+			}
+		}();
+		var nextDeferredDecoders = function () {
+			if (finishedByte.$ === 'Just') {
+				var byte_ = finishedByte.a;
+				return A2(
+					$elm$core$List$cons,
+					$elm$bytes$Bytes$Encode$unsignedInt8(byte_),
+					deferredEncoders);
+			} else {
+				return deferredEncoders;
+			}
+		}();
+		return _Utils_Tuple3(
+			$chelovek0v$bbase64$Base64$Shift$decodeNext(shift),
+			nextBlankByte,
+			nextDeferredDecoders);
+	});
+var $elm$core$String$foldl = _String_foldl;
+var $chelovek0v$bbase64$Base64$Decode$initialState = _Utils_Tuple3($chelovek0v$bbase64$Base64$Shift$Shift0, 0, _List_Nil);
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $elm$core$Result$map = F2(
+	function (func, ra) {
+		if (ra.$ === 'Ok') {
+			var a = ra.a;
+			return $elm$core$Result$Ok(
+				func(a));
+		} else {
+			var e = ra.a;
+			return $elm$core$Result$Err(e);
+		}
+	});
+var $elm$core$String$dropRight = F2(
+	function (n, string) {
+		return (n < 1) ? string : A3($elm$core$String$slice, 0, -n, string);
+	});
+var $elm$core$String$endsWith = _String_endsWith;
+var $chelovek0v$bbase64$Base64$Decode$strip = function (input) {
+	return A2($elm$core$String$endsWith, '==', input) ? $elm$core$Result$Ok(
+		A2($elm$core$String$dropRight, 2, input)) : (A2($elm$core$String$endsWith, '=', input) ? $elm$core$Result$Ok(
+		A2($elm$core$String$dropRight, 1, input)) : $elm$core$Result$Ok(input));
+};
+var $chelovek0v$bbase64$Base64$Decode$ValidationError = {$: 'ValidationError'};
+var $elm$regex$Regex$Match = F4(
+	function (match, index, number, submatches) {
+		return {index: index, match: match, number: number, submatches: submatches};
+	});
+var $elm$regex$Regex$contains = _Regex_contains;
+var $elm$regex$Regex$fromStringWith = _Regex_fromStringWith;
+var $elm$regex$Regex$fromString = function (string) {
+	return A2(
+		$elm$regex$Regex$fromStringWith,
+		{caseInsensitive: false, multiline: false},
+		string);
+};
+var $elm$regex$Regex$never = _Regex_never;
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var $chelovek0v$bbase64$Base64$Decode$validate = function (input) {
+	var regex = A2(
+		$elm$core$Maybe$withDefault,
+		$elm$regex$Regex$never,
+		$elm$regex$Regex$fromString('^[A-Za-z0-9\\/+]*$'));
+	return A2($elm$regex$Regex$contains, regex, input) ? $elm$core$Result$Ok(input) : $elm$core$Result$Err($chelovek0v$bbase64$Base64$Decode$ValidationError);
+};
+var $chelovek0v$bbase64$Base64$Decode$tryDecode = function (input) {
+	return A2(
+		$elm$core$Result$map,
+		A2(
+			$elm$core$String$foldl,
+			F2(
+				function (_char, state) {
+					return A2(
+						$elm$core$Maybe$withDefault,
+						state,
+						A2(
+							$elm$core$Maybe$map,
+							function (sextet) {
+								return A2($chelovek0v$bbase64$Base64$Decode$decodeStep, sextet, state);
+							},
+							$chelovek0v$bbase64$Base64$Table$decode(_char)));
+				}),
+			$chelovek0v$bbase64$Base64$Decode$initialState),
+		A2(
+			$elm$core$Result$andThen,
+			$chelovek0v$bbase64$Base64$Decode$validate,
+			$chelovek0v$bbase64$Base64$Decode$strip(input)));
+};
+var $chelovek0v$bbase64$Base64$Decode$bytes = $chelovek0v$bbase64$Base64$Decode$Decoder(
+	function (input) {
+		var _v0 = $chelovek0v$bbase64$Base64$Decode$tryDecode(input);
+		if (_v0.$ === 'Ok') {
+			var _v1 = _v0.a;
+			var deferredEncoders = _v1.c;
+			return $elm$core$Result$Ok(
+				$chelovek0v$bbase64$Base64$Decode$encodeBytes(deferredEncoders));
+		} else {
+			var e = _v0.a;
+			return $elm$core$Result$Err(e);
+		}
+	});
+var $chelovek0v$bbase64$Base64$Encode$BytesEncoder = function (a) {
+	return {$: 'BytesEncoder', a: a};
+};
+var $chelovek0v$bbase64$Base64$Encode$bytes = function (input) {
+	return $chelovek0v$bbase64$Base64$Encode$BytesEncoder(input);
+};
+var $elm$core$Basics$composeR = F3(
+	function (f, g, x) {
+		return g(
+			f(x));
+	});
+var $chelovek0v$bbase64$Base64$Decode$decode = F2(
+	function (_v0, input) {
+		var decoder = _v0.a;
+		return decoder(input);
+	});
 var $elm$bytes$Bytes$Encode$Utf8 = F2(
 	function (a, b) {
 		return {$: 'Utf8', a: a, b: b};
@@ -6084,32 +6464,226 @@ var $elm$bytes$Bytes$Encode$string = function (str) {
 		_Bytes_getStringWidth(str),
 		str);
 };
-var $author$project$Nats$Protocol$stringBytes = function (str) {
-	return $elm$bytes$Bytes$Encode$encode(
-		$elm$bytes$Bytes$Encode$string(str));
-};
-var $author$project$Nats$Protocol$emptyBytes = $author$project$Nats$Protocol$stringBytes('');
-var $elm$bytes$Bytes$Decode$fail = $elm$bytes$Bytes$Decode$Decoder(_Bytes_decodeFailure);
+var $elm$bytes$Bytes$Decode$decode = F2(
+	function (_v0, bs) {
+		var decoder = _v0.a;
+		return A2(_Bytes_decode, decoder, bs);
+	});
 var $elm$bytes$Bytes$Decode$Done = function (a) {
 	return {$: 'Done', a: a};
 };
 var $elm$bytes$Bytes$Decode$Loop = function (a) {
 	return {$: 'Loop', a: a};
 };
-var $elm$core$Maybe$andThen = F2(
-	function (callback, maybeValue) {
-		if (maybeValue.$ === 'Just') {
-			var value = maybeValue.a;
-			return callback(value);
-		} else {
-			return $elm$core$Maybe$Nothing;
+var $chelovek0v$bbase64$Base64$Shift$and = F2(
+	function (shift, value) {
+		switch (shift.$) {
+			case 'Shift0':
+				return value;
+			case 'Shift2':
+				return 3 & value;
+			case 'Shift4':
+				return 15 & value;
+			default:
+				return 63 & value;
 		}
 	});
-var $elm$core$Basics$composeR = F3(
-	function (f, g, x) {
-		return g(
-			f(x));
+var $chelovek0v$bbase64$Base64$Table$codeToCharMap = $elm$core$Dict$fromList(
+	_List_fromArray(
+		[
+			_Utils_Tuple2(0, 'A'),
+			_Utils_Tuple2(1, 'B'),
+			_Utils_Tuple2(2, 'C'),
+			_Utils_Tuple2(3, 'D'),
+			_Utils_Tuple2(4, 'E'),
+			_Utils_Tuple2(5, 'F'),
+			_Utils_Tuple2(6, 'G'),
+			_Utils_Tuple2(7, 'H'),
+			_Utils_Tuple2(8, 'I'),
+			_Utils_Tuple2(9, 'J'),
+			_Utils_Tuple2(10, 'K'),
+			_Utils_Tuple2(11, 'L'),
+			_Utils_Tuple2(12, 'M'),
+			_Utils_Tuple2(13, 'N'),
+			_Utils_Tuple2(14, 'O'),
+			_Utils_Tuple2(15, 'P'),
+			_Utils_Tuple2(16, 'Q'),
+			_Utils_Tuple2(17, 'R'),
+			_Utils_Tuple2(18, 'S'),
+			_Utils_Tuple2(19, 'T'),
+			_Utils_Tuple2(20, 'U'),
+			_Utils_Tuple2(21, 'V'),
+			_Utils_Tuple2(22, 'W'),
+			_Utils_Tuple2(23, 'X'),
+			_Utils_Tuple2(24, 'Y'),
+			_Utils_Tuple2(25, 'Z'),
+			_Utils_Tuple2(26, 'a'),
+			_Utils_Tuple2(27, 'b'),
+			_Utils_Tuple2(28, 'c'),
+			_Utils_Tuple2(29, 'd'),
+			_Utils_Tuple2(30, 'e'),
+			_Utils_Tuple2(31, 'f'),
+			_Utils_Tuple2(32, 'g'),
+			_Utils_Tuple2(33, 'h'),
+			_Utils_Tuple2(34, 'i'),
+			_Utils_Tuple2(35, 'j'),
+			_Utils_Tuple2(36, 'k'),
+			_Utils_Tuple2(37, 'l'),
+			_Utils_Tuple2(38, 'm'),
+			_Utils_Tuple2(39, 'n'),
+			_Utils_Tuple2(40, 'o'),
+			_Utils_Tuple2(41, 'p'),
+			_Utils_Tuple2(42, 'q'),
+			_Utils_Tuple2(43, 'r'),
+			_Utils_Tuple2(44, 's'),
+			_Utils_Tuple2(45, 't'),
+			_Utils_Tuple2(46, 'u'),
+			_Utils_Tuple2(47, 'v'),
+			_Utils_Tuple2(48, 'w'),
+			_Utils_Tuple2(49, 'x'),
+			_Utils_Tuple2(50, 'y'),
+			_Utils_Tuple2(51, 'z'),
+			_Utils_Tuple2(52, '0'),
+			_Utils_Tuple2(53, '1'),
+			_Utils_Tuple2(54, '2'),
+			_Utils_Tuple2(55, '3'),
+			_Utils_Tuple2(56, '4'),
+			_Utils_Tuple2(57, '5'),
+			_Utils_Tuple2(58, '6'),
+			_Utils_Tuple2(59, '7'),
+			_Utils_Tuple2(60, '8'),
+			_Utils_Tuple2(61, '9'),
+			_Utils_Tuple2(62, '+'),
+			_Utils_Tuple2(63, '/')
+		]));
+var $chelovek0v$bbase64$Base64$Table$encode = function (code) {
+	var _v0 = A2($elm$core$Dict$get, code, $chelovek0v$bbase64$Base64$Table$codeToCharMap);
+	if (_v0.$ === 'Just') {
+		var char_ = _v0.a;
+		return char_;
+	} else {
+		return '';
+	}
+};
+var $chelovek0v$bbase64$Base64$Shift$next = function (shift) {
+	switch (shift.$) {
+		case 'Shift0':
+			return $chelovek0v$bbase64$Base64$Shift$Shift2;
+		case 'Shift2':
+			return $chelovek0v$bbase64$Base64$Shift$Shift4;
+		case 'Shift4':
+			return $chelovek0v$bbase64$Base64$Shift$Shift6;
+		default:
+			return $chelovek0v$bbase64$Base64$Shift$Shift2;
+	}
+};
+var $chelovek0v$bbase64$Base64$Encode$sixtet = F2(
+	function (octet, _v0) {
+		var shift = _v0.a;
+		var sixtet_ = _v0.b;
+		var strAcc = _v0.c;
+		switch (shift.$) {
+			case 'Shift0':
+				return A2($chelovek0v$bbase64$Base64$Shift$shiftRightZfBy, $chelovek0v$bbase64$Base64$Shift$Shift2, octet);
+			case 'Shift2':
+				return A2($chelovek0v$bbase64$Base64$Shift$shiftLeftBy, $chelovek0v$bbase64$Base64$Shift$Shift4, sixtet_) | A2($chelovek0v$bbase64$Base64$Shift$shiftRightZfBy, $chelovek0v$bbase64$Base64$Shift$Shift4, octet);
+			case 'Shift4':
+				return A2($chelovek0v$bbase64$Base64$Shift$shiftLeftBy, $chelovek0v$bbase64$Base64$Shift$Shift2, sixtet_) | A2($chelovek0v$bbase64$Base64$Shift$shiftRightZfBy, $chelovek0v$bbase64$Base64$Shift$Shift6, octet);
+			default:
+				return sixtet_;
+		}
 	});
+var $chelovek0v$bbase64$Base64$Encode$encodeStep = F2(
+	function (octet, encodeState) {
+		var shift = encodeState.a;
+		var strAcc = encodeState.c;
+		var nextSixtet = function () {
+			switch (shift.$) {
+				case 'Shift0':
+					return A2($chelovek0v$bbase64$Base64$Shift$and, $chelovek0v$bbase64$Base64$Shift$Shift2, octet);
+				case 'Shift2':
+					return A2($chelovek0v$bbase64$Base64$Shift$and, $chelovek0v$bbase64$Base64$Shift$Shift4, octet);
+				case 'Shift4':
+					return A2($chelovek0v$bbase64$Base64$Shift$and, $chelovek0v$bbase64$Base64$Shift$Shift6, octet);
+				default:
+					return A2($chelovek0v$bbase64$Base64$Shift$and, $chelovek0v$bbase64$Base64$Shift$Shift2, octet);
+			}
+		}();
+		var currentSixtet = A2($chelovek0v$bbase64$Base64$Encode$sixtet, octet, encodeState);
+		var base64Char = function () {
+			if (shift.$ === 'Shift6') {
+				return _Utils_ap(
+					$chelovek0v$bbase64$Base64$Table$encode(currentSixtet),
+					$chelovek0v$bbase64$Base64$Table$encode(
+						A2($chelovek0v$bbase64$Base64$Shift$shiftRightZfBy, $chelovek0v$bbase64$Base64$Shift$Shift2, octet)));
+			} else {
+				return $chelovek0v$bbase64$Base64$Table$encode(currentSixtet);
+			}
+		}();
+		return _Utils_Tuple3(
+			$chelovek0v$bbase64$Base64$Shift$next(shift),
+			nextSixtet,
+			_Utils_ap(strAcc, base64Char));
+	});
+var $elm$bytes$Bytes$Decode$Decoder = function (a) {
+	return {$: 'Decoder', a: a};
+};
+var $elm$bytes$Bytes$Decode$map = F2(
+	function (func, _v0) {
+		var decodeA = _v0.a;
+		return $elm$bytes$Bytes$Decode$Decoder(
+			F2(
+				function (bites, offset) {
+					var _v1 = A2(decodeA, bites, offset);
+					var aOffset = _v1.a;
+					var a = _v1.b;
+					return _Utils_Tuple2(
+						aOffset,
+						func(a));
+				}));
+	});
+var $elm$bytes$Bytes$Decode$succeed = function (a) {
+	return $elm$bytes$Bytes$Decode$Decoder(
+		F2(
+			function (_v0, offset) {
+				return _Utils_Tuple2(offset, a);
+			}));
+};
+var $chelovek0v$bbase64$Base64$Encode$decodeStep = F2(
+	function (octetDecoder, _v0) {
+		var n = _v0.a;
+		var encodeState = _v0.b;
+		return (n <= 0) ? $elm$bytes$Bytes$Decode$succeed(
+			$elm$bytes$Bytes$Decode$Done(encodeState)) : A2(
+			$elm$bytes$Bytes$Decode$map,
+			function (octet) {
+				return $elm$bytes$Bytes$Decode$Loop(
+					_Utils_Tuple2(
+						n - 1,
+						A2($chelovek0v$bbase64$Base64$Encode$encodeStep, octet, encodeState)));
+			},
+			octetDecoder);
+	});
+var $chelovek0v$bbase64$Base64$Encode$finalize = function (_v0) {
+	var shift = _v0.a;
+	var sixtet_ = _v0.b;
+	var strAcc = _v0.c;
+	switch (shift.$) {
+		case 'Shift6':
+			return _Utils_ap(
+				strAcc,
+				$chelovek0v$bbase64$Base64$Table$encode(sixtet_));
+		case 'Shift4':
+			return strAcc + ($chelovek0v$bbase64$Base64$Table$encode(
+				A2($chelovek0v$bbase64$Base64$Shift$shiftLeftBy, $chelovek0v$bbase64$Base64$Shift$Shift2, sixtet_)) + '=');
+		case 'Shift2':
+			return strAcc + ($chelovek0v$bbase64$Base64$Table$encode(
+				A2($chelovek0v$bbase64$Base64$Shift$shiftLeftBy, $chelovek0v$bbase64$Base64$Shift$Shift4, sixtet_)) + '==');
+		default:
+			return strAcc;
+	}
+};
+var $chelovek0v$bbase64$Base64$Encode$initialEncodeState = _Utils_Tuple3($chelovek0v$bbase64$Base64$Shift$Shift0, 0, '');
 var $elm$bytes$Bytes$Decode$loopHelp = F4(
 	function (state, callback, bites, offset) {
 		loopHelp:
@@ -6141,19 +6715,102 @@ var $elm$bytes$Bytes$Decode$loop = F2(
 		return $elm$bytes$Bytes$Decode$Decoder(
 			A2($elm$bytes$Bytes$Decode$loopHelp, state, callback));
 	});
-var $elm$bytes$Bytes$Decode$map = F2(
-	function (func, _v0) {
+var $elm$bytes$Bytes$Decode$unsignedInt8 = $elm$bytes$Bytes$Decode$Decoder(_Bytes_read_u8);
+var $elm$bytes$Bytes$width = _Bytes_width;
+var $chelovek0v$bbase64$Base64$Encode$tryEncode = function (input) {
+	var decoderInitialState = _Utils_Tuple2(
+		$elm$bytes$Bytes$width(input),
+		$chelovek0v$bbase64$Base64$Encode$initialEncodeState);
+	var base64Decoder = A2(
+		$elm$bytes$Bytes$Decode$loop,
+		decoderInitialState,
+		$chelovek0v$bbase64$Base64$Encode$decodeStep($elm$bytes$Bytes$Decode$unsignedInt8));
+	return A2(
+		$elm$core$Maybe$map,
+		$chelovek0v$bbase64$Base64$Encode$finalize,
+		A2($elm$bytes$Bytes$Decode$decode, base64Decoder, input));
+};
+var $chelovek0v$bbase64$Base64$Encode$encode = function (encoder) {
+	if (encoder.$ === 'StringEncoder') {
+		var input = encoder.a;
+		return A2(
+			$elm$core$Maybe$withDefault,
+			'',
+			$chelovek0v$bbase64$Base64$Encode$tryEncode(
+				$elm$bytes$Bytes$Encode$encode(
+					$elm$bytes$Bytes$Encode$string(input))));
+	} else {
+		var input = encoder.a;
+		return A2(
+			$elm$core$Maybe$withDefault,
+			'',
+			$chelovek0v$bbase64$Base64$Encode$tryEncode(input));
+	}
+};
+var $elm$core$Result$mapError = F2(
+	function (f, result) {
+		if (result.$ === 'Ok') {
+			var v = result.a;
+			return $elm$core$Result$Ok(v);
+		} else {
+			var e = result.a;
+			return $elm$core$Result$Err(
+				f(e));
+		}
+	});
+var $author$project$Nats$Protocol$Error = function (a) {
+	return {$: 'Error', a: a};
+};
+var $author$project$Nats$Protocol$MSG = F2(
+	function (a, b) {
+		return {$: 'MSG', a: a, b: b};
+	});
+var $author$project$Nats$Protocol$Operation = function (a) {
+	return {$: 'Operation', a: a};
+};
+var $author$project$Nats$Protocol$Partial = function (a) {
+	return {$: 'Partial', a: a};
+};
+var $author$project$Nats$Protocol$PartialOperation = function (a) {
+	return {$: 'PartialOperation', a: a};
+};
+var $elm$bytes$Bytes$Decode$andThen = F2(
+	function (callback, _v0) {
 		var decodeA = _v0.a;
 		return $elm$bytes$Bytes$Decode$Decoder(
 			F2(
 				function (bites, offset) {
 					var _v1 = A2(decodeA, bites, offset);
-					var aOffset = _v1.a;
+					var newOffset = _v1.a;
 					var a = _v1.b;
-					return _Utils_Tuple2(
-						aOffset,
-						func(a));
+					var _v2 = callback(a);
+					var decodeB = _v2.a;
+					return A2(decodeB, bites, newOffset);
 				}));
+	});
+var $elm$bytes$Bytes$Decode$bytes = function (n) {
+	return $elm$bytes$Bytes$Decode$Decoder(
+		_Bytes_read_bytes(n));
+};
+var $elm$bytes$Bytes$Encode$Bytes = function (a) {
+	return {$: 'Bytes', a: a};
+};
+var $elm$bytes$Bytes$Encode$bytes = $elm$bytes$Bytes$Encode$Bytes;
+var $author$project$Nats$Protocol$cr = '\u000D\n';
+var $author$project$Nats$Protocol$stringBytes = function (str) {
+	return $elm$bytes$Bytes$Encode$encode(
+		$elm$bytes$Bytes$Encode$string(str));
+};
+var $author$project$Nats$Protocol$emptyBytes = $author$project$Nats$Protocol$stringBytes('');
+var $elm$bytes$Bytes$Decode$fail = $elm$bytes$Bytes$Decode$Decoder(_Bytes_decodeFailure);
+var $elm$core$Maybe$andThen = F2(
+	function (callback, maybeValue) {
+		if (maybeValue.$ === 'Just') {
+			var value = maybeValue.a;
+			return callback(value);
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
 	});
 var $elm$bytes$Bytes$Decode$string = function (n) {
 	return $elm$bytes$Bytes$Decode$Decoder(
@@ -6337,10 +6994,6 @@ var $author$project$Nats$Protocol$decodeServerInfo = A3(
 							$elm$json$Json$Decode$string,
 							$elm$json$Json$Decode$succeed($author$project$Nats$Protocol$ServerInfo))))))));
 var $elm$json$Json$Decode$decodeString = _Json_runOnString;
-var $elm$core$String$dropRight = F2(
-	function (n, string) {
-		return (n < 1) ? string : A3($elm$core$String$slice, 0, -n, string);
-	});
 var $elm$core$List$drop = F2(
 	function (n, list) {
 		drop:
@@ -6362,10 +7015,6 @@ var $elm$core$List$drop = F2(
 			}
 		}
 	});
-var $elm$regex$Regex$Match = F4(
-	function (match, index, number, submatches) {
-		return {index: index, match: match, number: number, submatches: submatches};
-	});
 var $elm$regex$Regex$findAtMost = _Regex_findAtMost;
 var $elm$core$List$head = function (list) {
 	if (list.b) {
@@ -6376,23 +7025,7 @@ var $elm$core$List$head = function (list) {
 		return $elm$core$Maybe$Nothing;
 	}
 };
-var $elm$regex$Regex$fromStringWith = _Regex_fromStringWith;
-var $elm$regex$Regex$fromString = function (string) {
-	return A2(
-		$elm$regex$Regex$fromStringWith,
-		{caseInsensitive: false, multiline: false},
-		string);
-};
 var $author$project$Nats$Protocol$messageRe = $elm$regex$Regex$fromString('^MSG ([a-zA-Z0-9._-]+) ([a-zA-Z0-9]+)( [a-zA-Z0-9._]+)? ([0-9]+)$');
-var $elm$core$Maybe$withDefault = F2(
-	function (_default, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return value;
-		} else {
-			return _default;
-		}
-	});
 var $author$project$Nats$Protocol$parseCommandMessage = function (str) {
 	var matches = function () {
 		var _v3 = $author$project$Nats$Protocol$messageRe;
@@ -6502,41 +7135,6 @@ var $author$project$Nats$Protocol$parseCommand = F2(
 				}
 		}
 	});
-var $elm$bytes$Bytes$Encode$Seq = F2(
-	function (a, b) {
-		return {$: 'Seq', a: a, b: b};
-	});
-var $elm$bytes$Bytes$Encode$getWidths = F2(
-	function (width, builders) {
-		getWidths:
-		while (true) {
-			if (!builders.b) {
-				return width;
-			} else {
-				var b = builders.a;
-				var bs = builders.b;
-				var $temp$width = width + $elm$bytes$Bytes$Encode$getWidth(b),
-					$temp$builders = bs;
-				width = $temp$width;
-				builders = $temp$builders;
-				continue getWidths;
-			}
-		}
-	});
-var $elm$bytes$Bytes$Encode$sequence = function (builders) {
-	return A2(
-		$elm$bytes$Bytes$Encode$Seq,
-		A2($elm$bytes$Bytes$Encode$getWidths, 0, builders),
-		builders);
-};
-var $elm$bytes$Bytes$Decode$succeed = function (a) {
-	return $elm$bytes$Bytes$Decode$Decoder(
-		F2(
-			function (_v0, offset) {
-				return _Utils_Tuple2(offset, a);
-			}));
-};
-var $elm$bytes$Bytes$width = _Bytes_width;
 var $author$project$Nats$Protocol$parseBytes = F2(
 	function (data, partial) {
 		if (partial.$ === 'Just') {
@@ -6780,12 +7378,32 @@ var $author$project$Nats$Protocol$toBytes = function (op) {
 					}
 				}())));
 };
-var $author$project$Nats$Config$bytesPorts = F2(
+var $author$project$Nats$Config$bytes = F2(
 	function (parentMsg, ports) {
 		return $author$project$Nats$Internal$Types$Config(
-			{debug: false, fromPortMessage: $elm$core$Result$Ok, mode: 'binaryPort', onError: $elm$core$Maybe$Nothing, parentMsg: parentMsg, parse: $author$project$Nats$Protocol$parseBytes, ports: ports, size: $elm$bytes$Bytes$width, toPortMessage: $elm$core$Basics$identity, write: $author$project$Nats$Protocol$toBytes});
+			{
+				debug: false,
+				fromPortMessage: A2(
+					$elm$core$Basics$composeR,
+					$chelovek0v$bbase64$Base64$Decode$decode($chelovek0v$bbase64$Base64$Decode$bytes),
+					$elm$core$Result$mapError(
+						function (e) {
+							if (e.$ === 'ValidationError') {
+								return 'Base64 validation error';
+							} else {
+								return 'Base64 invalid base sequence';
+							}
+						})),
+				mode: 'binary',
+				onError: $elm$core$Maybe$Nothing,
+				parentMsg: parentMsg,
+				parse: $author$project$Nats$Protocol$parseBytes,
+				ports: ports,
+				size: $elm$bytes$Bytes$width,
+				toPortMessage: A2($elm$core$Basics$composeR, $chelovek0v$bbase64$Base64$Encode$bytes, $chelovek0v$bbase64$Base64$Encode$encode),
+				write: $author$project$Nats$Protocol$toBytes
+			});
 	});
-var $lamdera$codecs$Lamdera$Wire3$decodeBytes_ = _LamderaCodecs_decodeBytes;
 var $author$project$NatsPorts$natsReceive = _Platform_incomingPort(
 	'natsReceive',
 	A2(
@@ -6896,7 +7514,7 @@ var $author$project$NatsPorts$natsReceive = _Platform_incomingPort(
 																	A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $elm$json$Json$Decode$string)
 																]))));
 											},
-											A2($elm$json$Json$Decode$field, 'message', $lamdera$codecs$Lamdera$Wire3$decodeBytes_));
+											A2($elm$json$Json$Decode$field, 'message', $elm$json$Json$Decode$string));
 									},
 									A2($elm$json$Json$Decode$field, 'sid', $elm$json$Json$Decode$string)))
 							]))));
@@ -6919,7 +7537,6 @@ var $elm$core$Maybe$destruct = F3(
 			return _default;
 		}
 	});
-var $lamdera$codecs$Lamdera$Wire3$encodeBytes_ = _LamderaCodecs_encodeBytes;
 var $elm$json$Json$Encode$null = _Json_encodeNull;
 var $author$project$NatsPorts$natsSend = _Platform_outgoingPort(
 	'natsSend',
@@ -6975,7 +7592,7 @@ var $author$project$NatsPorts$natsSend = _Platform_outgoingPort(
 											}($.ack)),
 											_Utils_Tuple2(
 											'message',
-											$lamdera$codecs$Lamdera$Wire3$encodeBytes_($.message)),
+											$elm$json$Json$Encode$string($.message)),
 											_Utils_Tuple2(
 											'sid',
 											$elm$json$Json$Encode$string($.sid))
@@ -6987,7 +7604,7 @@ var $author$project$NatsPorts$natsSend = _Platform_outgoingPort(
 	});
 var $author$project$NatsPorts$natsConfig = function (toMsg) {
 	return A2(
-		$author$project$Nats$Config$bytesPorts,
+		$author$project$Nats$Config$bytes,
 		toMsg,
 		{receive: $author$project$NatsPorts$natsReceive, send: $author$project$NatsPorts$natsSend});
 };
@@ -7004,150 +7621,8 @@ var $elm$time$Time$State = F2(
 	function (taggers, processes) {
 		return {processes: processes, taggers: taggers};
 	});
-var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
-var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
 var $elm$time$Time$init = $elm$core$Task$succeed(
 	A2($elm$time$Time$State, $elm$core$Dict$empty, $elm$core$Dict$empty));
-var $elm$core$Basics$compare = _Utils_compare;
-var $elm$core$Dict$get = F2(
-	function (targetKey, dict) {
-		get:
-		while (true) {
-			if (dict.$ === 'RBEmpty_elm_builtin') {
-				return $elm$core$Maybe$Nothing;
-			} else {
-				var key = dict.b;
-				var value = dict.c;
-				var left = dict.d;
-				var right = dict.e;
-				var _v1 = A2($elm$core$Basics$compare, targetKey, key);
-				switch (_v1.$) {
-					case 'LT':
-						var $temp$targetKey = targetKey,
-							$temp$dict = left;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-					case 'EQ':
-						return $elm$core$Maybe$Just(value);
-					default:
-						var $temp$targetKey = targetKey,
-							$temp$dict = right;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-				}
-			}
-		}
-	});
-var $elm$core$Dict$Black = {$: 'Black'};
-var $elm$core$Dict$RBNode_elm_builtin = F5(
-	function (a, b, c, d, e) {
-		return {$: 'RBNode_elm_builtin', a: a, b: b, c: c, d: d, e: e};
-	});
-var $elm$core$Dict$Red = {$: 'Red'};
-var $elm$core$Dict$balance = F5(
-	function (color, key, value, left, right) {
-		if ((right.$ === 'RBNode_elm_builtin') && (right.a.$ === 'Red')) {
-			var _v1 = right.a;
-			var rK = right.b;
-			var rV = right.c;
-			var rLeft = right.d;
-			var rRight = right.e;
-			if ((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) {
-				var _v3 = left.a;
-				var lK = left.b;
-				var lV = left.c;
-				var lLeft = left.d;
-				var lRight = left.e;
-				return A5(
-					$elm$core$Dict$RBNode_elm_builtin,
-					$elm$core$Dict$Red,
-					key,
-					value,
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, lK, lV, lLeft, lRight),
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, rK, rV, rLeft, rRight));
-			} else {
-				return A5(
-					$elm$core$Dict$RBNode_elm_builtin,
-					color,
-					rK,
-					rV,
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, key, value, left, rLeft),
-					rRight);
-			}
-		} else {
-			if ((((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) && (left.d.$ === 'RBNode_elm_builtin')) && (left.d.a.$ === 'Red')) {
-				var _v5 = left.a;
-				var lK = left.b;
-				var lV = left.c;
-				var _v6 = left.d;
-				var _v7 = _v6.a;
-				var llK = _v6.b;
-				var llV = _v6.c;
-				var llLeft = _v6.d;
-				var llRight = _v6.e;
-				var lRight = left.e;
-				return A5(
-					$elm$core$Dict$RBNode_elm_builtin,
-					$elm$core$Dict$Red,
-					lK,
-					lV,
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, llK, llV, llLeft, llRight),
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, key, value, lRight, right));
-			} else {
-				return A5($elm$core$Dict$RBNode_elm_builtin, color, key, value, left, right);
-			}
-		}
-	});
-var $elm$core$Dict$insertHelp = F3(
-	function (key, value, dict) {
-		if (dict.$ === 'RBEmpty_elm_builtin') {
-			return A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, key, value, $elm$core$Dict$RBEmpty_elm_builtin, $elm$core$Dict$RBEmpty_elm_builtin);
-		} else {
-			var nColor = dict.a;
-			var nKey = dict.b;
-			var nValue = dict.c;
-			var nLeft = dict.d;
-			var nRight = dict.e;
-			var _v1 = A2($elm$core$Basics$compare, key, nKey);
-			switch (_v1.$) {
-				case 'LT':
-					return A5(
-						$elm$core$Dict$balance,
-						nColor,
-						nKey,
-						nValue,
-						A3($elm$core$Dict$insertHelp, key, value, nLeft),
-						nRight);
-				case 'EQ':
-					return A5($elm$core$Dict$RBNode_elm_builtin, nColor, nKey, value, nLeft, nRight);
-				default:
-					return A5(
-						$elm$core$Dict$balance,
-						nColor,
-						nKey,
-						nValue,
-						nLeft,
-						A3($elm$core$Dict$insertHelp, key, value, nRight));
-			}
-		}
-	});
-var $elm$core$Dict$insert = F3(
-	function (key, value, dict) {
-		var _v0 = A3($elm$core$Dict$insertHelp, key, value, dict);
-		if ((_v0.$ === 'RBNode_elm_builtin') && (_v0.a.$ === 'Red')) {
-			var _v1 = _v0.a;
-			var k = _v0.b;
-			var v = _v0.c;
-			var l = _v0.d;
-			var r = _v0.e;
-			return A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, k, v, l, r);
-		} else {
-			var x = _v0;
-			return x;
-		}
-	});
 var $elm$time$Time$addMySub = F2(
 	function (_v0, state) {
 		var interval = _v0.a;
@@ -7731,16 +8206,6 @@ var $author$project$Nats$Internal$SocketStateCollection$insert = F2(
 				$elm$core$List$cons,
 				socket,
 				A2($author$project$Nats$Internal$SocketStateCollection$internalRemove, socket.socket.id, list)));
-	});
-var $elm$core$Maybe$map = F2(
-	function (f, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return $elm$core$Maybe$Just(
-				f(value));
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
 	});
 var $author$project$Nats$logError = F2(
 	function (_v0, err) {
@@ -8672,6 +9137,1139 @@ var $author$project$Nats$applyEffectAndSub = F4(
 				_List_fromArray(
 					[cmd1, cmd2])));
 	});
+var $author$project$Main$OnSimpleReplyResponse = function (a) {
+	return {$: 'OnSimpleReplyResponse', a: a};
+};
+var $author$project$Main$OnVoidReply = function (a) {
+	return {$: 'OnVoidReply', a: a};
+};
+var $author$project$Proto$Main$Internals_$defaultProto__Main__SimpleStringReply = {reply: ''};
+var $eriktim$elm_protocol_buffers$Protobuf$Decode$Decoder = function (a) {
+	return {$: 'Decoder', a: a};
+};
+var $elm$core$Set$Set_elm_builtin = function (a) {
+	return {$: 'Set_elm_builtin', a: a};
+};
+var $elm$core$Set$empty = $elm$core$Set$Set_elm_builtin($elm$core$Dict$empty);
+var $elm$core$Set$insert = F2(
+	function (key, _v0) {
+		var dict = _v0.a;
+		return $elm$core$Set$Set_elm_builtin(
+			A3($elm$core$Dict$insert, key, _Utils_Tuple0, dict));
+	});
+var $elm$core$Set$fromList = function (list) {
+	return A3($elm$core$List$foldl, $elm$core$Set$insert, $elm$core$Set$empty, list);
+};
+var $elm$core$Dict$isEmpty = function (dict) {
+	if (dict.$ === 'RBEmpty_elm_builtin') {
+		return true;
+	} else {
+		return false;
+	}
+};
+var $elm$core$Set$isEmpty = function (_v0) {
+	var dict = _v0.a;
+	return $elm$core$Dict$isEmpty(dict);
+};
+var $elm$core$Dict$getMin = function (dict) {
+	getMin:
+	while (true) {
+		if ((dict.$ === 'RBNode_elm_builtin') && (dict.d.$ === 'RBNode_elm_builtin')) {
+			var left = dict.d;
+			var $temp$dict = left;
+			dict = $temp$dict;
+			continue getMin;
+		} else {
+			return dict;
+		}
+	}
+};
+var $elm$core$Dict$moveRedLeft = function (dict) {
+	if (((dict.$ === 'RBNode_elm_builtin') && (dict.d.$ === 'RBNode_elm_builtin')) && (dict.e.$ === 'RBNode_elm_builtin')) {
+		if ((dict.e.d.$ === 'RBNode_elm_builtin') && (dict.e.d.a.$ === 'Red')) {
+			var clr = dict.a;
+			var k = dict.b;
+			var v = dict.c;
+			var _v1 = dict.d;
+			var lClr = _v1.a;
+			var lK = _v1.b;
+			var lV = _v1.c;
+			var lLeft = _v1.d;
+			var lRight = _v1.e;
+			var _v2 = dict.e;
+			var rClr = _v2.a;
+			var rK = _v2.b;
+			var rV = _v2.c;
+			var rLeft = _v2.d;
+			var _v3 = rLeft.a;
+			var rlK = rLeft.b;
+			var rlV = rLeft.c;
+			var rlL = rLeft.d;
+			var rlR = rLeft.e;
+			var rRight = _v2.e;
+			return A5(
+				$elm$core$Dict$RBNode_elm_builtin,
+				$elm$core$Dict$Red,
+				rlK,
+				rlV,
+				A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Black,
+					k,
+					v,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, lK, lV, lLeft, lRight),
+					rlL),
+				A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, rK, rV, rlR, rRight));
+		} else {
+			var clr = dict.a;
+			var k = dict.b;
+			var v = dict.c;
+			var _v4 = dict.d;
+			var lClr = _v4.a;
+			var lK = _v4.b;
+			var lV = _v4.c;
+			var lLeft = _v4.d;
+			var lRight = _v4.e;
+			var _v5 = dict.e;
+			var rClr = _v5.a;
+			var rK = _v5.b;
+			var rV = _v5.c;
+			var rLeft = _v5.d;
+			var rRight = _v5.e;
+			if (clr.$ === 'Black') {
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Black,
+					k,
+					v,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, lK, lV, lLeft, lRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, rK, rV, rLeft, rRight));
+			} else {
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Black,
+					k,
+					v,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, lK, lV, lLeft, lRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, rK, rV, rLeft, rRight));
+			}
+		}
+	} else {
+		return dict;
+	}
+};
+var $elm$core$Dict$moveRedRight = function (dict) {
+	if (((dict.$ === 'RBNode_elm_builtin') && (dict.d.$ === 'RBNode_elm_builtin')) && (dict.e.$ === 'RBNode_elm_builtin')) {
+		if ((dict.d.d.$ === 'RBNode_elm_builtin') && (dict.d.d.a.$ === 'Red')) {
+			var clr = dict.a;
+			var k = dict.b;
+			var v = dict.c;
+			var _v1 = dict.d;
+			var lClr = _v1.a;
+			var lK = _v1.b;
+			var lV = _v1.c;
+			var _v2 = _v1.d;
+			var _v3 = _v2.a;
+			var llK = _v2.b;
+			var llV = _v2.c;
+			var llLeft = _v2.d;
+			var llRight = _v2.e;
+			var lRight = _v1.e;
+			var _v4 = dict.e;
+			var rClr = _v4.a;
+			var rK = _v4.b;
+			var rV = _v4.c;
+			var rLeft = _v4.d;
+			var rRight = _v4.e;
+			return A5(
+				$elm$core$Dict$RBNode_elm_builtin,
+				$elm$core$Dict$Red,
+				lK,
+				lV,
+				A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, llK, llV, llLeft, llRight),
+				A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Black,
+					k,
+					v,
+					lRight,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, rK, rV, rLeft, rRight)));
+		} else {
+			var clr = dict.a;
+			var k = dict.b;
+			var v = dict.c;
+			var _v5 = dict.d;
+			var lClr = _v5.a;
+			var lK = _v5.b;
+			var lV = _v5.c;
+			var lLeft = _v5.d;
+			var lRight = _v5.e;
+			var _v6 = dict.e;
+			var rClr = _v6.a;
+			var rK = _v6.b;
+			var rV = _v6.c;
+			var rLeft = _v6.d;
+			var rRight = _v6.e;
+			if (clr.$ === 'Black') {
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Black,
+					k,
+					v,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, lK, lV, lLeft, lRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, rK, rV, rLeft, rRight));
+			} else {
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Black,
+					k,
+					v,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, lK, lV, lLeft, lRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, rK, rV, rLeft, rRight));
+			}
+		}
+	} else {
+		return dict;
+	}
+};
+var $elm$core$Dict$removeHelpPrepEQGT = F7(
+	function (targetKey, dict, color, key, value, left, right) {
+		if ((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) {
+			var _v1 = left.a;
+			var lK = left.b;
+			var lV = left.c;
+			var lLeft = left.d;
+			var lRight = left.e;
+			return A5(
+				$elm$core$Dict$RBNode_elm_builtin,
+				color,
+				lK,
+				lV,
+				lLeft,
+				A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, key, value, lRight, right));
+		} else {
+			_v2$2:
+			while (true) {
+				if ((right.$ === 'RBNode_elm_builtin') && (right.a.$ === 'Black')) {
+					if (right.d.$ === 'RBNode_elm_builtin') {
+						if (right.d.a.$ === 'Black') {
+							var _v3 = right.a;
+							var _v4 = right.d;
+							var _v5 = _v4.a;
+							return $elm$core$Dict$moveRedRight(dict);
+						} else {
+							break _v2$2;
+						}
+					} else {
+						var _v6 = right.a;
+						var _v7 = right.d;
+						return $elm$core$Dict$moveRedRight(dict);
+					}
+				} else {
+					break _v2$2;
+				}
+			}
+			return dict;
+		}
+	});
+var $elm$core$Dict$removeMin = function (dict) {
+	if ((dict.$ === 'RBNode_elm_builtin') && (dict.d.$ === 'RBNode_elm_builtin')) {
+		var color = dict.a;
+		var key = dict.b;
+		var value = dict.c;
+		var left = dict.d;
+		var lColor = left.a;
+		var lLeft = left.d;
+		var right = dict.e;
+		if (lColor.$ === 'Black') {
+			if ((lLeft.$ === 'RBNode_elm_builtin') && (lLeft.a.$ === 'Red')) {
+				var _v3 = lLeft.a;
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					color,
+					key,
+					value,
+					$elm$core$Dict$removeMin(left),
+					right);
+			} else {
+				var _v4 = $elm$core$Dict$moveRedLeft(dict);
+				if (_v4.$ === 'RBNode_elm_builtin') {
+					var nColor = _v4.a;
+					var nKey = _v4.b;
+					var nValue = _v4.c;
+					var nLeft = _v4.d;
+					var nRight = _v4.e;
+					return A5(
+						$elm$core$Dict$balance,
+						nColor,
+						nKey,
+						nValue,
+						$elm$core$Dict$removeMin(nLeft),
+						nRight);
+				} else {
+					return $elm$core$Dict$RBEmpty_elm_builtin;
+				}
+			}
+		} else {
+			return A5(
+				$elm$core$Dict$RBNode_elm_builtin,
+				color,
+				key,
+				value,
+				$elm$core$Dict$removeMin(left),
+				right);
+		}
+	} else {
+		return $elm$core$Dict$RBEmpty_elm_builtin;
+	}
+};
+var $elm$core$Dict$removeHelp = F2(
+	function (targetKey, dict) {
+		if (dict.$ === 'RBEmpty_elm_builtin') {
+			return $elm$core$Dict$RBEmpty_elm_builtin;
+		} else {
+			var color = dict.a;
+			var key = dict.b;
+			var value = dict.c;
+			var left = dict.d;
+			var right = dict.e;
+			if (_Utils_cmp(targetKey, key) < 0) {
+				if ((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Black')) {
+					var _v4 = left.a;
+					var lLeft = left.d;
+					if ((lLeft.$ === 'RBNode_elm_builtin') && (lLeft.a.$ === 'Red')) {
+						var _v6 = lLeft.a;
+						return A5(
+							$elm$core$Dict$RBNode_elm_builtin,
+							color,
+							key,
+							value,
+							A2($elm$core$Dict$removeHelp, targetKey, left),
+							right);
+					} else {
+						var _v7 = $elm$core$Dict$moveRedLeft(dict);
+						if (_v7.$ === 'RBNode_elm_builtin') {
+							var nColor = _v7.a;
+							var nKey = _v7.b;
+							var nValue = _v7.c;
+							var nLeft = _v7.d;
+							var nRight = _v7.e;
+							return A5(
+								$elm$core$Dict$balance,
+								nColor,
+								nKey,
+								nValue,
+								A2($elm$core$Dict$removeHelp, targetKey, nLeft),
+								nRight);
+						} else {
+							return $elm$core$Dict$RBEmpty_elm_builtin;
+						}
+					}
+				} else {
+					return A5(
+						$elm$core$Dict$RBNode_elm_builtin,
+						color,
+						key,
+						value,
+						A2($elm$core$Dict$removeHelp, targetKey, left),
+						right);
+				}
+			} else {
+				return A2(
+					$elm$core$Dict$removeHelpEQGT,
+					targetKey,
+					A7($elm$core$Dict$removeHelpPrepEQGT, targetKey, dict, color, key, value, left, right));
+			}
+		}
+	});
+var $elm$core$Dict$removeHelpEQGT = F2(
+	function (targetKey, dict) {
+		if (dict.$ === 'RBNode_elm_builtin') {
+			var color = dict.a;
+			var key = dict.b;
+			var value = dict.c;
+			var left = dict.d;
+			var right = dict.e;
+			if (_Utils_eq(targetKey, key)) {
+				var _v1 = $elm$core$Dict$getMin(right);
+				if (_v1.$ === 'RBNode_elm_builtin') {
+					var minKey = _v1.b;
+					var minValue = _v1.c;
+					return A5(
+						$elm$core$Dict$balance,
+						color,
+						minKey,
+						minValue,
+						left,
+						$elm$core$Dict$removeMin(right));
+				} else {
+					return $elm$core$Dict$RBEmpty_elm_builtin;
+				}
+			} else {
+				return A5(
+					$elm$core$Dict$balance,
+					color,
+					key,
+					value,
+					left,
+					A2($elm$core$Dict$removeHelp, targetKey, right));
+			}
+		} else {
+			return $elm$core$Dict$RBEmpty_elm_builtin;
+		}
+	});
+var $elm$core$Dict$remove = F2(
+	function (key, dict) {
+		var _v0 = A2($elm$core$Dict$removeHelp, key, dict);
+		if ((_v0.$ === 'RBNode_elm_builtin') && (_v0.a.$ === 'Red')) {
+			var _v1 = _v0.a;
+			var k = _v0.b;
+			var v = _v0.c;
+			var l = _v0.d;
+			var r = _v0.e;
+			return A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, k, v, l, r);
+		} else {
+			var x = _v0;
+			return x;
+		}
+	});
+var $elm$core$Set$remove = F2(
+	function (key, _v0) {
+		var dict = _v0.a;
+		return $elm$core$Set$Set_elm_builtin(
+			A2($elm$core$Dict$remove, key, dict));
+	});
+var $eriktim$elm_protocol_buffers$Internal$Protobuf$Bit32 = {$: 'Bit32'};
+var $eriktim$elm_protocol_buffers$Internal$Protobuf$Bit64 = {$: 'Bit64'};
+var $eriktim$elm_protocol_buffers$Internal$Protobuf$EndGroup = {$: 'EndGroup'};
+var $eriktim$elm_protocol_buffers$Internal$Protobuf$LengthDelimited = function (a) {
+	return {$: 'LengthDelimited', a: a};
+};
+var $eriktim$elm_protocol_buffers$Internal$Protobuf$StartGroup = {$: 'StartGroup'};
+var $eriktim$elm_protocol_buffers$Internal$Protobuf$VarInt = {$: 'VarInt'};
+var $elm$core$Basics$pow = _Basics_pow;
+var $eriktim$elm_protocol_buffers$Internal$Int32$fromSigned = function (value) {
+	return (value < 0) ? (value + A2($elm$core$Basics$pow, 2, 32)) : value;
+};
+var $eriktim$elm_protocol_buffers$Internal$Int32$fromZigZag = function (value) {
+	return (value >>> 1) ^ ((-1) * (1 & value));
+};
+var $eriktim$elm_protocol_buffers$Internal$Int32$popBase128 = function (value) {
+	var higherBits = value >>> 7;
+	var base128 = 127 & value;
+	return _Utils_Tuple2(base128, higherBits);
+};
+var $eriktim$elm_protocol_buffers$Internal$Int32$pushBase128 = F2(
+	function (base128, _int) {
+		return base128 + (_int << 7);
+	});
+var $elm$core$Basics$ge = _Utils_ge;
+var $eriktim$elm_protocol_buffers$Internal$Int32$toSigned = function (value) {
+	return (_Utils_cmp(
+		value,
+		A2($elm$core$Basics$pow, 2, 31)) > -1) ? (value - A2($elm$core$Basics$pow, 2, 32)) : value;
+};
+var $elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
+var $eriktim$elm_protocol_buffers$Internal$Int32$toZigZag = function (value) {
+	return (value >> 31) ^ (value << 1);
+};
+var $eriktim$elm_protocol_buffers$Internal$Int32$operations = {fromBase128: $elm$core$Basics$identity, fromSigned: $eriktim$elm_protocol_buffers$Internal$Int32$fromSigned, fromZigZag: $eriktim$elm_protocol_buffers$Internal$Int32$fromZigZag, popBase128: $eriktim$elm_protocol_buffers$Internal$Int32$popBase128, pushBase128: $eriktim$elm_protocol_buffers$Internal$Int32$pushBase128, toSigned: $eriktim$elm_protocol_buffers$Internal$Int32$toSigned, toZigZag: $eriktim$elm_protocol_buffers$Internal$Int32$toZigZag};
+var $eriktim$elm_protocol_buffers$Protobuf$Decode$varIntDecoder = function (config) {
+	return A2(
+		$elm$bytes$Bytes$Decode$andThen,
+		function (octet) {
+			return ((128 & octet) === 128) ? A2(
+				$elm$bytes$Bytes$Decode$map,
+				function (_v0) {
+					var usedBytes = _v0.a;
+					var value = _v0.b;
+					return _Utils_Tuple2(
+						usedBytes + 1,
+						A2(config.pushBase128, 127 & octet, value));
+				},
+				$eriktim$elm_protocol_buffers$Protobuf$Decode$varIntDecoder(config)) : $elm$bytes$Bytes$Decode$succeed(
+				_Utils_Tuple2(
+					1,
+					config.fromBase128(octet)));
+		},
+		$elm$bytes$Bytes$Decode$unsignedInt8);
+};
+var $eriktim$elm_protocol_buffers$Protobuf$Decode$tagDecoder = A2(
+	$elm$bytes$Bytes$Decode$andThen,
+	function (_v0) {
+		var usedBytes = _v0.a;
+		var value = _v0.b;
+		var fieldNumber = value >>> 3;
+		return A2(
+			$elm$bytes$Bytes$Decode$map,
+			function (_v1) {
+				var n = _v1.a;
+				var wireType = _v1.b;
+				return _Utils_Tuple2(
+					usedBytes + n,
+					_Utils_Tuple2(fieldNumber, wireType));
+			},
+			function () {
+				var _v2 = 7 & value;
+				switch (_v2) {
+					case 0:
+						return $elm$bytes$Bytes$Decode$succeed(
+							_Utils_Tuple2(0, $eriktim$elm_protocol_buffers$Internal$Protobuf$VarInt));
+					case 1:
+						return $elm$bytes$Bytes$Decode$succeed(
+							_Utils_Tuple2(0, $eriktim$elm_protocol_buffers$Internal$Protobuf$Bit64));
+					case 2:
+						return A2(
+							$elm$bytes$Bytes$Decode$map,
+							$elm$core$Tuple$mapSecond($eriktim$elm_protocol_buffers$Internal$Protobuf$LengthDelimited),
+							$eriktim$elm_protocol_buffers$Protobuf$Decode$varIntDecoder($eriktim$elm_protocol_buffers$Internal$Int32$operations));
+					case 3:
+						return $elm$bytes$Bytes$Decode$succeed(
+							_Utils_Tuple2(0, $eriktim$elm_protocol_buffers$Internal$Protobuf$StartGroup));
+					case 4:
+						return $elm$bytes$Bytes$Decode$succeed(
+							_Utils_Tuple2(0, $eriktim$elm_protocol_buffers$Internal$Protobuf$EndGroup));
+					case 5:
+						return $elm$bytes$Bytes$Decode$succeed(
+							_Utils_Tuple2(0, $eriktim$elm_protocol_buffers$Internal$Protobuf$Bit32));
+					default:
+						return $elm$bytes$Bytes$Decode$fail;
+				}
+			}());
+	},
+	$eriktim$elm_protocol_buffers$Protobuf$Decode$varIntDecoder($eriktim$elm_protocol_buffers$Internal$Int32$operations));
+var $elm$core$Basics$always = F2(
+	function (a, _v0) {
+		return a;
+	});
+var $eriktim$elm_protocol_buffers$Protobuf$Decode$unknownFieldDecoder = function (wireType) {
+	switch (wireType.$) {
+		case 'VarInt':
+			return A2(
+				$elm$bytes$Bytes$Decode$map,
+				$elm$core$Tuple$first,
+				$eriktim$elm_protocol_buffers$Protobuf$Decode$varIntDecoder($eriktim$elm_protocol_buffers$Internal$Int32$operations));
+		case 'Bit64':
+			return A2(
+				$elm$bytes$Bytes$Decode$map,
+				$elm$core$Basics$always(8),
+				$elm$bytes$Bytes$Decode$bytes(8));
+		case 'LengthDelimited':
+			var width = wireType.a;
+			return A2(
+				$elm$bytes$Bytes$Decode$map,
+				$elm$core$Basics$always(width),
+				$elm$bytes$Bytes$Decode$bytes(width));
+		case 'StartGroup':
+			return $elm$bytes$Bytes$Decode$fail;
+		case 'EndGroup':
+			return $elm$bytes$Bytes$Decode$fail;
+		default:
+			return A2(
+				$elm$bytes$Bytes$Decode$map,
+				$elm$core$Basics$always(4),
+				$elm$bytes$Bytes$Decode$bytes(4));
+	}
+};
+var $eriktim$elm_protocol_buffers$Protobuf$Decode$stepMessage = F2(
+	function (width, state) {
+		return (state.width <= 0) ? ($elm$core$Set$isEmpty(state.requiredFieldNumbers) ? $elm$bytes$Bytes$Decode$succeed(
+			$elm$bytes$Bytes$Decode$Done(
+				_Utils_Tuple2(width, state.model))) : $elm$bytes$Bytes$Decode$fail) : A2(
+			$elm$bytes$Bytes$Decode$andThen,
+			function (_v0) {
+				var usedBytes = _v0.a;
+				var _v1 = _v0.b;
+				var fieldNumber = _v1.a;
+				var wireType = _v1.b;
+				var _v2 = A2($elm$core$Dict$get, fieldNumber, state.dict);
+				if (_v2.$ === 'Just') {
+					var decoder = _v2.a.a;
+					return A2(
+						$elm$bytes$Bytes$Decode$map,
+						function (_v3) {
+							var n = _v3.a;
+							var fn = _v3.b;
+							return $elm$bytes$Bytes$Decode$Loop(
+								_Utils_update(
+									state,
+									{
+										model: fn(state.model),
+										requiredFieldNumbers: A2($elm$core$Set$remove, fieldNumber, state.requiredFieldNumbers),
+										width: (state.width - usedBytes) - n
+									}));
+						},
+						decoder(wireType));
+				} else {
+					return A2(
+						$elm$bytes$Bytes$Decode$map,
+						function (n) {
+							return $elm$bytes$Bytes$Decode$Loop(
+								_Utils_update(
+									state,
+									{width: (state.width - usedBytes) - n}));
+						},
+						$eriktim$elm_protocol_buffers$Protobuf$Decode$unknownFieldDecoder(wireType));
+				}
+			},
+			$eriktim$elm_protocol_buffers$Protobuf$Decode$tagDecoder);
+	});
+var $eriktim$elm_protocol_buffers$Protobuf$Decode$message = F2(
+	function (v, fieldDecoders) {
+		var _v0 = A2(
+			$elm$core$Tuple$mapSecond,
+			$elm$core$Dict$fromList,
+			A2(
+				$elm$core$Tuple$mapFirst,
+				$elm$core$Set$fromList,
+				A3(
+					$elm$core$List$foldr,
+					F2(
+						function (_v1, _v2) {
+							var isRequired = _v1.a;
+							var items = _v1.b;
+							var numbers = _v2.a;
+							var decoders = _v2.b;
+							var numbers_ = isRequired ? _Utils_ap(
+								numbers,
+								A2($elm$core$List$map, $elm$core$Tuple$first, items)) : numbers;
+							return _Utils_Tuple2(
+								numbers_,
+								_Utils_ap(items, decoders));
+						}),
+					_Utils_Tuple2(_List_Nil, _List_Nil),
+					fieldDecoders)));
+		var requiredSet = _v0.a;
+		var dict = _v0.b;
+		return $eriktim$elm_protocol_buffers$Protobuf$Decode$Decoder(
+			function (wireType) {
+				if (wireType.$ === 'LengthDelimited') {
+					var width = wireType.a;
+					return A2(
+						$elm$bytes$Bytes$Decode$loop,
+						{dict: dict, model: v, requiredFieldNumbers: requiredSet, width: width},
+						$eriktim$elm_protocol_buffers$Protobuf$Decode$stepMessage(width));
+				} else {
+					return $elm$bytes$Bytes$Decode$fail;
+				}
+			});
+	});
+var $eriktim$elm_protocol_buffers$Protobuf$Decode$FieldDecoder = F2(
+	function (a, b) {
+		return {$: 'FieldDecoder', a: a, b: b};
+	});
+var $eriktim$elm_protocol_buffers$Protobuf$Decode$map = F2(
+	function (fn, _v0) {
+		var decoder = _v0.a;
+		return $eriktim$elm_protocol_buffers$Protobuf$Decode$Decoder(
+			function (wireType) {
+				return A2(
+					$elm$bytes$Bytes$Decode$map,
+					$elm$core$Tuple$mapSecond(fn),
+					decoder(wireType));
+			});
+	});
+var $eriktim$elm_protocol_buffers$Protobuf$Decode$optional = F3(
+	function (fieldNumber, decoder, set) {
+		return A2(
+			$eriktim$elm_protocol_buffers$Protobuf$Decode$FieldDecoder,
+			false,
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					fieldNumber,
+					A2($eriktim$elm_protocol_buffers$Protobuf$Decode$map, set, decoder))
+				]));
+	});
+var $elm$core$Tuple$pair = F2(
+	function (a, b) {
+		return _Utils_Tuple2(a, b);
+	});
+var $eriktim$elm_protocol_buffers$Protobuf$Decode$lengthDelimitedDecoder = function (decoder) {
+	return $eriktim$elm_protocol_buffers$Protobuf$Decode$Decoder(
+		function (wireType) {
+			if (wireType.$ === 'LengthDelimited') {
+				var width = wireType.a;
+				return A2(
+					$elm$bytes$Bytes$Decode$map,
+					$elm$core$Tuple$pair(width),
+					decoder(width));
+			} else {
+				return $elm$bytes$Bytes$Decode$fail;
+			}
+		});
+};
+var $eriktim$elm_protocol_buffers$Protobuf$Decode$string = $eriktim$elm_protocol_buffers$Protobuf$Decode$lengthDelimitedDecoder($elm$bytes$Bytes$Decode$string);
+var $author$project$Proto$Main$Internals_$decodeProto__Main__SimpleStringReply = A2(
+	$eriktim$elm_protocol_buffers$Protobuf$Decode$message,
+	$author$project$Proto$Main$Internals_$defaultProto__Main__SimpleStringReply,
+	_List_fromArray(
+		[
+			A3(
+			$eriktim$elm_protocol_buffers$Protobuf$Decode$optional,
+			1,
+			$eriktim$elm_protocol_buffers$Protobuf$Decode$string,
+			F2(
+				function (a, r) {
+					return _Utils_update(
+						r,
+						{reply: a});
+				}))
+		]));
+var $author$project$Proto$Main$decodeSimpleStringReply = $author$project$Proto$Main$Internals_$decodeProto__Main__SimpleStringReply;
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$Encoder = F2(
+	function (a, b) {
+		return {$: 'Encoder', a: a, b: b};
+	});
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$sequence = function (items) {
+	var width = $elm$core$List$sum(
+		A2($elm$core$List$map, $elm$core$Tuple$first, items));
+	return _Utils_Tuple2(
+		width,
+		$elm$bytes$Bytes$Encode$sequence(
+			A2($elm$core$List$map, $elm$core$Tuple$second, items)));
+};
+var $elm$core$List$sortBy = _List_sortBy;
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$toVarIntEncoders = F2(
+	function (config, value) {
+		var _v0 = config.popBase128(value);
+		var base128 = _v0.a;
+		var higherBits = _v0.b;
+		return _Utils_eq(
+			higherBits,
+			config.fromBase128(0)) ? _List_fromArray(
+			[
+				$elm$bytes$Bytes$Encode$unsignedInt8(base128)
+			]) : A2(
+			$elm$core$List$cons,
+			$elm$bytes$Bytes$Encode$unsignedInt8(128 | base128),
+			A2($eriktim$elm_protocol_buffers$Protobuf$Encode$toVarIntEncoders, config, higherBits));
+	});
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$varInt = F2(
+	function (config, value) {
+		var encoders = A2($eriktim$elm_protocol_buffers$Protobuf$Encode$toVarIntEncoders, config, value);
+		return _Utils_Tuple2(
+			$elm$core$List$length(encoders),
+			$elm$bytes$Bytes$Encode$sequence(encoders));
+	});
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$varInt32 = $eriktim$elm_protocol_buffers$Protobuf$Encode$varInt($eriktim$elm_protocol_buffers$Internal$Int32$operations);
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$tag = F2(
+	function (fieldNumber, wireType) {
+		var encodeTag = function (base4) {
+			return $eriktim$elm_protocol_buffers$Protobuf$Encode$varInt32((fieldNumber << 3) | base4);
+		};
+		switch (wireType.$) {
+			case 'VarInt':
+				return encodeTag(0);
+			case 'Bit64':
+				return encodeTag(1);
+			case 'LengthDelimited':
+				var width = wireType.a;
+				return $eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(
+					_List_fromArray(
+						[
+							encodeTag(2),
+							$eriktim$elm_protocol_buffers$Protobuf$Encode$varInt32(width)
+						]));
+			case 'StartGroup':
+				return encodeTag(3);
+			case 'EndGroup':
+				return encodeTag(4);
+			default:
+				return encodeTag(5);
+		}
+	});
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$unwrap = function (encoder) {
+	if (encoder.$ === 'Encoder') {
+		var encoder_ = encoder.b;
+		return $elm$core$Maybe$Just(encoder_);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$toPackedEncoder = function (encoders) {
+	if (encoders.b && (encoders.a.$ === 'Encoder')) {
+		var _v1 = encoders.a;
+		var wireType = _v1.a;
+		var encoder = _v1.b;
+		var others = encoders.b;
+		if (wireType.$ === 'LengthDelimited') {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			return $elm$core$Maybe$Just(
+				$eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(
+					A2(
+						$elm$core$List$cons,
+						encoder,
+						A2($elm$core$List$filterMap, $eriktim$elm_protocol_buffers$Protobuf$Encode$unwrap, others))));
+		}
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$toKeyValuePairEncoder = function (_v0) {
+	var fieldNumber = _v0.a;
+	var encoder = _v0.b;
+	switch (encoder.$) {
+		case 'Encoder':
+			var wireType = encoder.a;
+			var encoder_ = encoder.b;
+			return $eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(
+				_List_fromArray(
+					[
+						A2($eriktim$elm_protocol_buffers$Protobuf$Encode$tag, fieldNumber, wireType),
+						encoder_
+					]));
+		case 'ListEncoder':
+			var encoders = encoder.a;
+			var _v2 = $eriktim$elm_protocol_buffers$Protobuf$Encode$toPackedEncoder(encoders);
+			if (_v2.$ === 'Just') {
+				var encoder_ = _v2.a;
+				return $eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(
+					_List_fromArray(
+						[
+							A2(
+							$eriktim$elm_protocol_buffers$Protobuf$Encode$tag,
+							fieldNumber,
+							$eriktim$elm_protocol_buffers$Internal$Protobuf$LengthDelimited(encoder_.a)),
+							encoder_
+						]));
+			} else {
+				return $eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(
+					A2(
+						$elm$core$List$map,
+						A2(
+							$elm$core$Basics$composeL,
+							$eriktim$elm_protocol_buffers$Protobuf$Encode$toKeyValuePairEncoder,
+							$elm$core$Tuple$pair(fieldNumber)),
+						encoders));
+			}
+		default:
+			return $eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(_List_Nil);
+	}
+};
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$message = function (items) {
+	return function (e) {
+		return A2(
+			$eriktim$elm_protocol_buffers$Protobuf$Encode$Encoder,
+			$eriktim$elm_protocol_buffers$Internal$Protobuf$LengthDelimited(e.a),
+			e);
+	}(
+		$eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(
+			A2(
+				$elm$core$List$map,
+				$eriktim$elm_protocol_buffers$Protobuf$Encode$toKeyValuePairEncoder,
+				A2($elm$core$List$sortBy, $elm$core$Tuple$first, items))));
+};
+var $elm$bytes$Bytes$Encode$getStringWidth = _Bytes_getStringWidth;
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$string = function (v) {
+	var width = $elm$bytes$Bytes$Encode$getStringWidth(v);
+	return A2(
+		$eriktim$elm_protocol_buffers$Protobuf$Encode$Encoder,
+		$eriktim$elm_protocol_buffers$Internal$Protobuf$LengthDelimited(width),
+		_Utils_Tuple2(
+			width,
+			$elm$bytes$Bytes$Encode$string(v)));
+};
+var $author$project$Proto$Main$Internals_$encodeProto__Main__StringArg = function (value) {
+	return $eriktim$elm_protocol_buffers$Protobuf$Encode$message(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				1,
+				$eriktim$elm_protocol_buffers$Protobuf$Encode$string(value.arg1))
+			]));
+};
+var $author$project$Proto$Main$encodeStringArg = $author$project$Proto$Main$Internals_$encodeProto__Main__StringArg;
+var $author$project$Nrpc$Main$subject = function (params) {
+	return A2(
+		$elm$core$String$join,
+		'.',
+		_List_fromArray(
+			['root', params.instance]));
+};
+var $author$project$Nrpc$Main$SvcCustomSubject$subject = function (packageParams) {
+	return A2(
+		$elm$core$String$join,
+		'.',
+		_List_fromArray(
+			[
+				$author$project$Nrpc$Main$subject(packageParams),
+				'custom_subject'
+			]));
+};
+var $author$project$Nrpc$Main$SvcCustomSubject$mtSimpleReply__Subject = function (packageParams) {
+	return A2(
+		$elm$core$String$join,
+		'.',
+		_List_fromArray(
+			[
+				$author$project$Nrpc$Main$SvcCustomSubject$subject(packageParams),
+				'mt_simple_reply'
+			]));
+};
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$encode = function (encoder) {
+	switch (encoder.$) {
+		case 'Encoder':
+			var _v1 = encoder.b;
+			var encoder_ = _v1.b;
+			return $elm$bytes$Bytes$Encode$encode(encoder_);
+		case 'ListEncoder':
+			var encoders = encoder.a;
+			return $elm$bytes$Bytes$Encode$encode(
+				$elm$bytes$Bytes$Encode$sequence(
+					A2(
+						$elm$core$List$map,
+						A2($elm$core$Basics$composeL, $elm$bytes$Bytes$Encode$bytes, $eriktim$elm_protocol_buffers$Protobuf$Encode$encode),
+						encoders)));
+		default:
+			return $elm$bytes$Bytes$Encode$encode(
+				$elm$bytes$Bytes$Encode$sequence(_List_Nil));
+	}
+};
+var $author$project$Nrpc$Timeout = {$: 'Timeout'};
+var $author$project$Nrpc$DecodeError = function (a) {
+	return {$: 'DecodeError', a: a};
+};
+var $eriktim$elm_protocol_buffers$Protobuf$Decode$decode = F2(
+	function (_v0, bs) {
+		var decoder = _v0.a;
+		var wireType = $eriktim$elm_protocol_buffers$Internal$Protobuf$LengthDelimited(
+			$elm$bytes$Bytes$width(bs));
+		return A2(
+			$elm$core$Maybe$map,
+			$elm$core$Tuple$second,
+			A2(
+				$elm$bytes$Bytes$Decode$decode,
+				decoder(wireType),
+				bs));
+	});
+var $author$project$Proto$Nrpc$Internals_$Proto__Nrpc__Error__CLIENT = {$: 'Proto__Nrpc__Error__CLIENT'};
+var $author$project$Proto$Nrpc$Internals_$Proto__Nrpc__Error__EOS = {$: 'Proto__Nrpc__Error__EOS'};
+var $author$project$Proto$Nrpc$Internals_$Proto__Nrpc__Error__SERVER = {$: 'Proto__Nrpc__Error__SERVER'};
+var $author$project$Proto$Nrpc$Internals_$Proto__Nrpc__Error__SERVERTOOBUSY = {$: 'Proto__Nrpc__Error__SERVERTOOBUSY'};
+var $author$project$Proto$Nrpc$Internals_$Proto__Nrpc__Error__TypeUnrecognized_ = function (a) {
+	return {$: 'Proto__Nrpc__Error__TypeUnrecognized_', a: a};
+};
+var $eriktim$elm_protocol_buffers$Protobuf$Decode$packedDecoder = F2(
+	function (decoderWireType, decoder) {
+		return $eriktim$elm_protocol_buffers$Protobuf$Decode$Decoder(
+			function (wireType) {
+				if (wireType.$ === 'LengthDelimited') {
+					return decoder;
+				} else {
+					return _Utils_eq(wireType, decoderWireType) ? decoder : $elm$bytes$Bytes$Decode$fail;
+				}
+			});
+	});
+var $eriktim$elm_protocol_buffers$Protobuf$Decode$intDecoder = A2(
+	$elm$core$Basics$composeR,
+	$eriktim$elm_protocol_buffers$Protobuf$Decode$varIntDecoder,
+	$eriktim$elm_protocol_buffers$Protobuf$Decode$packedDecoder($eriktim$elm_protocol_buffers$Internal$Protobuf$VarInt));
+var $eriktim$elm_protocol_buffers$Protobuf$Decode$int32 = $eriktim$elm_protocol_buffers$Protobuf$Decode$intDecoder($eriktim$elm_protocol_buffers$Internal$Int32$operations);
+var $author$project$Proto$Nrpc$Internals_$decodeProto__Nrpc__Error__Type = A2(
+	$eriktim$elm_protocol_buffers$Protobuf$Decode$map,
+	function (i) {
+		switch (i) {
+			case 0:
+				return $author$project$Proto$Nrpc$Internals_$Proto__Nrpc__Error__CLIENT;
+			case 1:
+				return $author$project$Proto$Nrpc$Internals_$Proto__Nrpc__Error__SERVER;
+			case 3:
+				return $author$project$Proto$Nrpc$Internals_$Proto__Nrpc__Error__EOS;
+			case 4:
+				return $author$project$Proto$Nrpc$Internals_$Proto__Nrpc__Error__SERVERTOOBUSY;
+			default:
+				return $author$project$Proto$Nrpc$Internals_$Proto__Nrpc__Error__TypeUnrecognized_(i);
+		}
+	},
+	$eriktim$elm_protocol_buffers$Protobuf$Decode$int32);
+var $author$project$Proto$Nrpc$Internals_$defaultProto__Nrpc__Error__Type = $author$project$Proto$Nrpc$Internals_$Proto__Nrpc__Error__CLIENT;
+var $author$project$Proto$Nrpc$Internals_$defaultProto__Nrpc__Error = {message: '', msgCount: 0, type_: $author$project$Proto$Nrpc$Internals_$defaultProto__Nrpc__Error__Type};
+var $eriktim$elm_protocol_buffers$Protobuf$Decode$uintDecoder = function (config) {
+	return A2(
+		$eriktim$elm_protocol_buffers$Protobuf$Decode$packedDecoder,
+		$eriktim$elm_protocol_buffers$Internal$Protobuf$VarInt,
+		A2(
+			$elm$bytes$Bytes$Decode$map,
+			$elm$core$Tuple$mapSecond(config.fromSigned),
+			$eriktim$elm_protocol_buffers$Protobuf$Decode$varIntDecoder(config)));
+};
+var $eriktim$elm_protocol_buffers$Protobuf$Decode$uint32 = $eriktim$elm_protocol_buffers$Protobuf$Decode$uintDecoder($eriktim$elm_protocol_buffers$Internal$Int32$operations);
+var $author$project$Proto$Nrpc$Internals_$decodeProto__Nrpc__Error = A2(
+	$eriktim$elm_protocol_buffers$Protobuf$Decode$message,
+	$author$project$Proto$Nrpc$Internals_$defaultProto__Nrpc__Error,
+	_List_fromArray(
+		[
+			A3(
+			$eriktim$elm_protocol_buffers$Protobuf$Decode$optional,
+			1,
+			$author$project$Proto$Nrpc$Internals_$decodeProto__Nrpc__Error__Type,
+			F2(
+				function (a, r) {
+					return _Utils_update(
+						r,
+						{type_: a});
+				})),
+			A3(
+			$eriktim$elm_protocol_buffers$Protobuf$Decode$optional,
+			2,
+			$eriktim$elm_protocol_buffers$Protobuf$Decode$string,
+			F2(
+				function (a, r) {
+					return _Utils_update(
+						r,
+						{message: a});
+				})),
+			A3(
+			$eriktim$elm_protocol_buffers$Protobuf$Decode$optional,
+			3,
+			$eriktim$elm_protocol_buffers$Protobuf$Decode$uint32,
+			F2(
+				function (a, r) {
+					return _Utils_update(
+						r,
+						{msgCount: a});
+				}))
+		]));
+var $author$project$Proto$Nrpc$decodeError = $author$project$Proto$Nrpc$Internals_$decodeProto__Nrpc__Error;
+var $author$project$Nrpc$ClientError = function (a) {
+	return {$: 'ClientError', a: a};
+};
+var $author$project$Nrpc$EOS = function (a) {
+	return {$: 'EOS', a: a};
+};
+var $author$project$Nrpc$ServerError = function (a) {
+	return {$: 'ServerError', a: a};
+};
+var $author$project$Nrpc$ServerTooBusy = function (a) {
+	return {$: 'ServerTooBusy', a: a};
+};
+var $author$project$Nrpc$fromProtoError = function (err) {
+	var _v0 = err.type_;
+	switch (_v0.$) {
+		case 'Proto__Nrpc__Error__CLIENT':
+			return $author$project$Nrpc$ClientError(err.message);
+		case 'Proto__Nrpc__Error__SERVER':
+			return $author$project$Nrpc$ServerError(err.message);
+		case 'Proto__Nrpc__Error__EOS':
+			return $author$project$Nrpc$EOS(err.msgCount);
+		case 'Proto__Nrpc__Error__SERVERTOOBUSY':
+			return $author$project$Nrpc$ServerTooBusy(err.message);
+		default:
+			var i = _v0.a;
+			return $author$project$Nrpc$DecodeError(
+				'invalid error type: ' + $elm$core$String$fromInt(i));
+	}
+};
+var $elm$bytes$Bytes$Decode$signedInt8 = $elm$bytes$Bytes$Decode$Decoder(_Bytes_read_i8);
+var $author$project$Nrpc$decodeMessage = F2(
+	function (decoder, message) {
+		var isError = A2(
+			$elm$core$Maybe$withDefault,
+			false,
+			A2(
+				$elm$bytes$Bytes$Decode$decode,
+				A2(
+					$elm$bytes$Bytes$Decode$map,
+					$elm$core$Basics$eq(0),
+					$elm$bytes$Bytes$Decode$signedInt8),
+				message));
+		if (isError) {
+			var _v0 = A2(
+				$elm$core$Maybe$andThen,
+				$eriktim$elm_protocol_buffers$Protobuf$Decode$decode($author$project$Proto$Nrpc$decodeError),
+				A2(
+					$elm$bytes$Bytes$Decode$decode,
+					A2(
+						$elm$bytes$Bytes$Decode$andThen,
+						function (_v1) {
+							return $elm$bytes$Bytes$Decode$bytes(
+								$elm$bytes$Bytes$width(message) - 1);
+						},
+						$elm$bytes$Bytes$Decode$signedInt8),
+					message));
+			if (_v0.$ === 'Just') {
+				var err = _v0.a;
+				return $elm$core$Result$Err(
+					$author$project$Nrpc$fromProtoError(err));
+			} else {
+				return $elm$core$Result$Err(
+					$author$project$Nrpc$DecodeError('could not decode the error'));
+			}
+		} else {
+			var _v2 = A2($eriktim$elm_protocol_buffers$Protobuf$Decode$decode, decoder, message);
+			if (_v2.$ === 'Just') {
+				var value = _v2.a;
+				return $elm$core$Result$Ok(value);
+			} else {
+				return $elm$core$Result$Err(
+					$author$project$Nrpc$DecodeError('could not decode the response'));
+			}
+		}
+	});
+var $author$project$Nrpc$handleResponse = F2(
+	function (decoder, result) {
+		if (result.$ === 'Ok') {
+			var message = result.a;
+			return A2($author$project$Nrpc$decodeMessage, decoder, message);
+		} else {
+			return $elm$core$Result$Err($author$project$Nrpc$Timeout);
+		}
+	});
+var $author$project$Nats$Internal$Types$Request = function (a) {
+	return {$: 'Request', a: a};
+};
+var $author$project$Nats$request = F3(
+	function (subject, message, onResponse) {
+		return $author$project$Nats$Internal$Types$Request(
+			{message: message, onResponse: onResponse, sid: $elm$core$Maybe$Nothing, subject: subject, timeout: $elm$core$Maybe$Nothing});
+	});
+var $author$project$Nrpc$request = F5(
+	function (encode, decoder, subject, arg, onResponse) {
+		return A3(
+			$author$project$Nats$request,
+			subject,
+			$eriktim$elm_protocol_buffers$Protobuf$Encode$encode(
+				encode(arg)),
+			A2(
+				$elm$core$Basics$composeR,
+				$author$project$Nrpc$handleResponse(decoder),
+				onResponse));
+	});
+var $author$project$Nrpc$Main$SvcCustomSubject$mtSimpleReply = F3(
+	function (packageParams, onResponse, input) {
+		return A5(
+			$author$project$Nrpc$request,
+			$author$project$Proto$Main$encodeStringArg,
+			$author$project$Proto$Main$decodeSimpleStringReply,
+			$author$project$Nrpc$Main$SvcCustomSubject$mtSimpleReply__Subject(packageParams),
+			input,
+			onResponse);
+	});
+var $author$project$Proto$Nrpc$Internals_$defaultProto__Nrpc__Void = {};
+var $author$project$Proto$Nrpc$Internals_$decodeProto__Nrpc__Void = A2($eriktim$elm_protocol_buffers$Protobuf$Decode$message, $author$project$Proto$Nrpc$Internals_$defaultProto__Nrpc__Void, _List_Nil);
+var $author$project$Proto$Nrpc$decodeVoid = $author$project$Proto$Nrpc$Internals_$decodeProto__Nrpc__Void;
+var $author$project$Nrpc$Main$SvcCustomSubject$mtVoidReply__Subject = function (packageParams) {
+	return A2(
+		$elm$core$String$join,
+		'.',
+		_List_fromArray(
+			[
+				$author$project$Nrpc$Main$SvcCustomSubject$subject(packageParams),
+				'mtvoidreply'
+			]));
+};
+var $author$project$Nrpc$Main$SvcCustomSubject$mtVoidReply = F3(
+	function (packageParams, onResponse, input) {
+		return A5(
+			$author$project$Nrpc$request,
+			$author$project$Proto$Main$encodeStringArg,
+			$author$project$Proto$Nrpc$decodeVoid,
+			$author$project$Nrpc$Main$SvcCustomSubject$mtVoidReply__Subject(packageParams),
+			input,
+			onResponse);
+	});
 var $author$project$Nats$Internal$Types$NoEffect = {$: 'NoEffect'};
 var $author$project$Nats$Effect$none = $author$project$Nats$Internal$Types$NoEffect;
 var $author$project$Nats$Internal$SocketState$OnAck = function (a) {
@@ -8827,31 +10425,72 @@ var $author$project$Nats$update = F3(
 	});
 var $author$project$Main$innerUpdate = F2(
 	function (msg, model) {
-		if (msg.$ === 'NatsMsg') {
-			var natsMsg = msg.a;
-			var _v1 = A3($author$project$Nats$update, $author$project$Main$natsConfig, natsMsg, model.nats);
-			var nats = _v1.a;
-			var cmd = _v1.b;
-			return _Utils_Tuple3(
-				_Utils_update(
+		switch (msg.$) {
+			case 'NatsMsg':
+				var natsMsg = msg.a;
+				var _v1 = A3($author$project$Nats$update, $author$project$Main$natsConfig, natsMsg, model.nats);
+				var nats = _v1.a;
+				var cmd = _v1.b;
+				return _Utils_Tuple3(
+					_Utils_update(
+						model,
+						{nats: nats}),
+					$author$project$Nats$Effect$none,
+					cmd);
+			case 'OnSocketEvent':
+				if (msg.a.$ === 'SocketOpen') {
+					var info = msg.a.a;
+					return _Utils_Tuple3(
+						_Utils_update(
+							model,
+							{
+								serverInfo: $elm$core$Maybe$Just(info)
+							}),
+						$author$project$Nats$Effect$none,
+						$elm$core$Platform$Cmd$none);
+				} else {
+					return _Utils_Tuple3(model, $author$project$Nats$Effect$none, $elm$core$Platform$Cmd$none);
+				}
+			case 'CallSimpleReply':
+				var instance = msg.a;
+				return _Utils_Tuple3(
 					model,
-					{nats: nats}),
-				$author$project$Nats$Effect$none,
-				cmd);
-		} else {
-			if (msg.a.$ === 'SocketOpen') {
-				var info = msg.a.a;
+					A3(
+						$author$project$Nrpc$Main$SvcCustomSubject$mtSimpleReply,
+						{instance: instance},
+						$author$project$Main$OnSimpleReplyResponse,
+						{arg1: 'Some value'}),
+					$elm$core$Platform$Cmd$none);
+			case 'OnSimpleReplyResponse':
+				var reply = msg.a;
 				return _Utils_Tuple3(
 					_Utils_update(
 						model,
 						{
-							serverInfo: $elm$core$Maybe$Just(info)
+							simpleStringReply: $elm$core$Maybe$Just(reply)
 						}),
 					$author$project$Nats$Effect$none,
 					$elm$core$Platform$Cmd$none);
-			} else {
-				return _Utils_Tuple3(model, $author$project$Nats$Effect$none, $elm$core$Platform$Cmd$none);
-			}
+			case 'CallVoidReply':
+				var arg = msg.a;
+				return _Utils_Tuple3(
+					model,
+					A3(
+						$author$project$Nrpc$Main$SvcCustomSubject$mtVoidReply,
+						{instance: 'default'},
+						$author$project$Main$OnVoidReply,
+						{arg1: arg}),
+					$elm$core$Platform$Cmd$none);
+			default:
+				var reply = msg.a;
+				return _Utils_Tuple3(
+					_Utils_update(
+						model,
+						{
+							voidReply: $elm$core$Maybe$Just(reply)
+						}),
+					$author$project$Nats$Effect$none,
+					$elm$core$Platform$Cmd$none);
 		}
 	});
 var $author$project$Main$OnSocketEvent = function (a) {
@@ -8929,7 +10568,14 @@ var $author$project$Main$update = F2(
 				_List_fromArray(
 					[cmd, natsCmd])));
 	});
+var $author$project$Main$CallSimpleReply = function (a) {
+	return {$: 'CallSimpleReply', a: a};
+};
+var $author$project$Main$CallVoidReply = function (a) {
+	return {$: 'CallVoidReply', a: a};
+};
 var $elm$html$Html$a = _VirtualDom_node('a');
+var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
 		return A2(
@@ -8947,6 +10593,61 @@ var $elm$html$Html$Attributes$href = function (url) {
 		_VirtualDom_noJavaScriptUri(url));
 };
 var $elm$html$Html$li = _VirtualDom_node('li');
+var $elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var $elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'click',
+		$elm$json$Json$Decode$succeed(msg));
+};
+var $author$project$Main$printError = function (e) {
+	switch (e.$) {
+		case 'Timeout':
+			return 'timeout';
+		case 'DecodeError':
+			var err = e.a;
+			return 'decode error: ' + err;
+		case 'ClientError':
+			var err = e.a;
+			return 'client error: ' + err;
+		case 'ServerError':
+			var err = e.a;
+			return 'server error: ' + err;
+		case 'ServerTooBusy':
+			var err = e.a;
+			return 'server too busy: ' + err;
+		default:
+			var err = e.a;
+			return 'EOS: ' + $elm$core$String$fromInt(err);
+	}
+};
+var $author$project$Main$printSimpleStringReply = function (res) {
+	if (res.$ === 'Ok') {
+		var reply = res.a;
+		return reply.reply;
+	} else {
+		var err = res.a;
+		return $author$project$Main$printError(err);
+	}
+};
+var $author$project$Main$printVoidReply = function (res) {
+	if (res.$ === 'Ok') {
+		return 'OK';
+	} else {
+		var err = res.a;
+		return $author$project$Main$printError(err);
+	}
+};
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$h3 = _VirtualDom_node('h3');
 var $elm$core$Basics$modBy = _Basics_modBy;
@@ -9173,6 +10874,126 @@ var $author$project$Main$view = function (model) {
 										]));
 							}
 						}()
+						]),
+						_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$h4,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Custom Subject')
+								])),
+							A2(
+							$elm$html$Html$ul,
+							_List_Nil,
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$li,
+									_List_Nil,
+									_List_fromArray(
+										[
+											A2(
+											$elm$html$Html$button,
+											_List_fromArray(
+												[
+													$elm$html$Html$Events$onClick(
+													$author$project$Main$CallSimpleReply('default'))
+												]),
+											_List_fromArray(
+												[
+													$elm$html$Html$text('MtSimpleReply')
+												])),
+											A2(
+											$elm$html$Html$button,
+											_List_fromArray(
+												[
+													$elm$html$Html$Events$onClick(
+													$author$project$Main$CallSimpleReply('invalid'))
+												]),
+											_List_fromArray(
+												[
+													$elm$html$Html$text('MtSimpleReply error')
+												]))
+										])),
+									A2(
+									$elm$html$Html$li,
+									_List_Nil,
+									_List_fromArray(
+										[
+											A2(
+											$elm$html$Html$button,
+											_List_fromArray(
+												[
+													$elm$html$Html$Events$onClick(
+													$author$project$Main$CallVoidReply('normal'))
+												]),
+											_List_fromArray(
+												[
+													$elm$html$Html$text('MtVoidReply normal')
+												])),
+											A2(
+											$elm$html$Html$button,
+											_List_fromArray(
+												[
+													$elm$html$Html$Events$onClick(
+													$author$project$Main$CallVoidReply('please fail'))
+												]),
+											_List_fromArray(
+												[
+													$elm$html$Html$text('MtVoidReply please fail')
+												]))
+										]))
+								]))
+						]),
+						_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$h4,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Subject Params')
+								]))
+						]),
+						_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$h4,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Replies')
+								])),
+							A2(
+							$elm$html$Html$ul,
+							_List_Nil,
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$li,
+									_List_Nil,
+									_List_fromArray(
+										[
+											$elm$html$Html$text(
+											'Simple String Reply: ' + A2(
+												$elm$core$Maybe$withDefault,
+												'',
+												A2($elm$core$Maybe$map, $author$project$Main$printSimpleStringReply, model.simpleStringReply)))
+										])),
+									A2(
+									$elm$html$Html$li,
+									_List_Nil,
+									_List_fromArray(
+										[
+											$elm$html$Html$text(
+											'Void Reply: ' + A2(
+												$elm$core$Maybe$withDefault,
+												'',
+												A2($elm$core$Maybe$map, $author$project$Main$printVoidReply, model.voidReply)))
+										]))
+								]))
 						])
 					]))
 			]),

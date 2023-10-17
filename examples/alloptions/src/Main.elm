@@ -2,8 +2,9 @@ module Main exposing (..)
 
 import Browser
 import Bytes exposing (Bytes)
-import Html exposing (Html, a, div, h1, h3, li, p, text, ul)
+import Html exposing (Html, a, button, div, h1, h3, li, p, text, ul)
 import Html.Attributes exposing (class, href)
+import Html.Events exposing (onClick)
 import Nats
 import Nats.Effect
 import Nats.Events
@@ -16,6 +17,8 @@ import Nrpc.Main
 import Nrpc.Main.NoRequestService
 import Nrpc.Main.SvcCustomSubject
 import Nrpc.Main.SvcSubjectParams
+import Proto.Main
+import Proto.Nrpc
 import Random
 import Time
 
@@ -28,29 +31,81 @@ type alias Model =
     { nats : Nats.State Bytes Msg
     , serverInfo : Maybe Nats.Protocol.ServerInfo
     , socket : Nats.Socket.Socket
+    , simpleStringReply : Maybe (Result Nrpc.Error Proto.Main.SimpleStringReply)
+    , voidReply : Maybe (Result Nrpc.Error Proto.Nrpc.Void)
     }
 
 
 type Msg
     = NatsMsg (Nats.Msg Bytes Msg)
     | OnSocketEvent Nats.Events.SocketEvent
+    | CallSimpleReply String
+    | CallVoidReply String
+    | OnSimpleReplyResponse (Result Nrpc.Error Proto.Main.SimpleStringReply)
+    | OnVoidReply (Result Nrpc.Error Proto.Nrpc.Void)
 
 
 natsConfig =
     NatsPorts.natsConfig NatsMsg
 
 
+printError : Nrpc.Error -> String
+printError e =
+    case e of
+        Nrpc.Timeout ->
+            "timeout"
+
+        Nrpc.DecodeError err ->
+            "decode error: " ++ err
+
+        Nrpc.ClientError err ->
+            "client error: " ++ err
+
+        Nrpc.ServerError err ->
+            "server error: " ++ err
+
+        Nrpc.ServerTooBusy err ->
+            "server too busy: " ++ err
+
+        Nrpc.EOS err ->
+            "EOS: " ++ String.fromInt err
+
+
+printSimpleStringReply : Result Nrpc.Error Proto.Main.SimpleStringReply -> String
+printSimpleStringReply res =
+    case res of
+        Ok reply ->
+            reply.reply
+
+        Err err ->
+            printError err
+
+
+printVoidReply : Result Nrpc.Error Proto.Nrpc.Void -> String
+printVoidReply res =
+    case res of
+        Ok _ ->
+            "OK"
+
+        Err err ->
+            printError err
+
+
 init : Flags -> ( Model, Cmd Msg )
 init { now } =
     ( { nats = Nats.init (Random.initialSeed now) (Time.millisToPosix now)
       , serverInfo = Nothing
-      , socket = Nats.Socket.new "0" "ws://localhost:8087"
+      , socket =
+            Nats.Socket.new "0" "ws://localhost:8087"
+                |> Nats.Socket.withDebug True
+      , simpleStringReply = Nothing
+      , voidReply = Nothing
       }
     , Cmd.none
     )
 
 
-innerUpdate : Msg -> Model -> ( Model, Nats.Effect Bytes msg, Cmd Msg )
+innerUpdate : Msg -> Model -> ( Model, Nats.Effect Bytes Msg, Cmd Msg )
 innerUpdate msg model =
     case msg of
         NatsMsg natsMsg ->
@@ -73,6 +128,34 @@ innerUpdate msg model =
 
         OnSocketEvent _ ->
             ( model
+            , Nats.Effect.none
+            , Cmd.none
+            )
+
+        CallSimpleReply instance ->
+            ( model
+            , Nrpc.Main.SvcCustomSubject.mtSimpleReply { instance = instance }
+                OnSimpleReplyResponse
+                { arg1 = "Some value" }
+            , Cmd.none
+            )
+
+        OnSimpleReplyResponse reply ->
+            ( { model | simpleStringReply = Just reply }
+            , Nats.Effect.none
+            , Cmd.none
+            )
+
+        CallVoidReply arg ->
+            ( model
+            , Nrpc.Main.SvcCustomSubject.mtVoidReply { instance = "default" }
+                OnVoidReply
+                { arg1 = arg }
+            , Cmd.none
+            )
+
+        OnVoidReply reply ->
+            ( { model | voidReply = Just reply }
             , Nats.Effect.none
             , Cmd.none
             )
@@ -172,6 +255,42 @@ view model =
                                 [ text "nats-websocket-gw" ]
                             , text " --no-origin-check"
                             ]
+              ]
+            , [ Html.h4 [] [ Html.text "Custom Subject" ]
+              , ul []
+                    [ li []
+                        [ button [ onClick <| CallSimpleReply "default" ] [ Html.text "MtSimpleReply" ]
+                        , button [ onClick <| CallSimpleReply "invalid" ] [ Html.text "MtSimpleReply error" ]
+                        ]
+                    , li []
+                        [ button [ onClick <| CallVoidReply "normal" ] [ Html.text "MtVoidReply normal" ]
+                        , button [ onClick <| CallVoidReply "please fail" ] [ Html.text "MtVoidReply please fail" ]
+                        ]
+                    ]
+              ]
+            , [ Html.h4 [] [ Html.text "Subject Params" ]
+              ]
+            , [ Html.h4 [] [ Html.text "Replies" ]
+              , ul []
+                    [ li []
+                        [ text
+                            ("Simple String Reply: "
+                                ++ (model.simpleStringReply
+                                        |> Maybe.map printSimpleStringReply
+                                        |> Maybe.withDefault ""
+                                   )
+                            )
+                        ]
+                    , li []
+                        [ text
+                            ("Void Reply: "
+                                ++ (model.voidReply
+                                        |> Maybe.map printVoidReply
+                                        |> Maybe.withDefault ""
+                                   )
+                            )
+                        ]
+                    ]
               ]
             ]
         ]
