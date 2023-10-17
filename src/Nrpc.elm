@@ -79,14 +79,8 @@ request :
 request encode decoder subject arg onResponse =
     Nats.request subject
         (encode arg |> Protobuf.Encode.encode)
-        (Result.mapError
-            (\_ -> Timeout)
-            >> Result.andThen
-                (Protobuf.Decode.decode decoder
-                    >> Result.fromMaybe (DecodeError "could not decode response")
-                )
-            >> onResponse
-        )
+        (handleResponse decoder
+            >> onResponse)
 
 
 {-| subsribe to a stream request with void replies
@@ -146,12 +140,21 @@ decodeMessage decoder message =
                 |> Maybe.withDefault False
     in
     if isError then
-        case Protobuf.Decode.decode decodeError message of
-            Just err ->
-                Err <| fromProtoError err
+        case
+            message
+                |> Bytes.Decode.decode
+                    ( 
+                        Bytes.Decode.signedInt8
+                        |> Bytes.Decode.andThen (\_ ->
+                         Bytes.Decode.bytes <| Bytes.width message - 1
+                            )
+                    )
+                |> Maybe.andThen ( Protobuf.Decode.decode decodeError)  of
+                        Just err ->
+                            Err <| fromProtoError err
 
-            Nothing ->
-                Err <| DecodeError "could not decode the error"
+                        Nothing ->
+                            Err <| DecodeError "could not decode the error"
 
     else
         case Protobuf.Decode.decode decoder message of
