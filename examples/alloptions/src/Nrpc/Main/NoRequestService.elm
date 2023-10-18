@@ -4,9 +4,7 @@ import Nats
 import Nrpc
 import Nrpc.Main
 import Proto.Main
-import Proto.Nrpc
 import Protobuf.Decode
-import Protobuf.Encode
 
 
 subject : Nrpc.Main.SubjectParams -> String
@@ -19,10 +17,8 @@ mtNoRequest__Subject packageParams =
     String.join "." [ subject packageParams, "mtnorequest" ]
 
 
-mtNoRequest packageParams onResponse input =
-    Nrpc.request
-        Proto.Nrpc.encodeNoRequest
-        Proto.Main.decodeSimpleStringReply
+mtNoRequest packageParams onResponse =
+    Nrpc.subscribeToNoRequestMethod
         (mtNoRequest__Subject packageParams)
-        input
+        Proto.Main.decodeSimpleStringReply
         onResponse

@@ -474,6 +474,8 @@ type alias MethodOptions =
     { subject : String
     , subjectParams : List String
     , streamedReply : Bool
+    , noRequest : Bool
+    , noReply : Bool
     }
 
 
@@ -502,12 +504,16 @@ methodOptions fOptions method =
                         options.nrpcMethodSubject
                 , subjectParams = options.nrpcMethodSubjectParams
                 , streamedReply = options.nrpcStreamedReply
+                , noRequest = method.inputType == ".nrpc.NoRequest"
+                , noReply = method.outputType == ".nrpc.NoReply"
                 }
             )
         |> Maybe.withDefault
             { subject = defaultSubject
             , subjectParams = []
             , streamedReply = False
+            , noRequest = method.inputType == "nrpc.NoRequest"
+            , noReply = method.outputType == ".nrpc.NoReply"
             }
 
 
@@ -587,99 +593,190 @@ generateMethodDeclaration pbTypes fOptions fAPI sOptions sAPI method =
                         )
                 }
     in
-    (case subjectParams of
-        Nothing ->
-            []
+        (case subjectParams of
+            Nothing ->
+                []
 
-        Just params ->
-            [ Elm.alias params.typename params.annotation ]
-    )
-        ++ [ Elm.declaration subjectFnName
-                (Elm.function subjectArgs
-                    (\args ->
-                        Gen.String.join
-                            (Elm.string ".")
-                        <|
-                            Elm.list <|
-                                Elm.apply sAPI.subject
-                                    (case subjectParams of
-                                        Nothing ->
-                                            args
+            Just params ->
+                [ Elm.alias params.typename params.annotation ]
+        )
+            ++ [ Elm.declaration subjectFnName
+                    (Elm.function subjectArgs
+                        (\args ->
+                            Gen.String.join
+                                (Elm.string ".")
+                            <|
+                                Elm.list <|
+                                    Elm.apply sAPI.subject
+                                        (case subjectParams of
+                                            Nothing ->
+                                                args
 
-                                        _ ->
-                                            List.take (List.length args - 1) args
-                                    )
-                                    :: Elm.string options.subject
-                                    :: (case options.subjectParams of
-                                            [] ->
-                                                []
+                                            _ ->
+                                                List.take (List.length args - 1) args
+                                        )
+                                        :: Elm.string options.subject
+                                        :: (case options.subjectParams of
+                                                [] ->
+                                                    []
 
-                                            params ->
-                                                case List.last args of
-                                                    Nothing ->
-                                                        []
+                                                params ->
+                                                    case List.last args of
+                                                        Nothing ->
+                                                            []
 
-                                                    Just p ->
-                                                        params |> List.map (\n -> Elm.get n p)
-                                       )
+                                                        Just p ->
+                                                            params |> List.map (\n -> Elm.get n p)
+                                           )
+                        )
                     )
-                )
-           , Elm.declaration fnName
-                (let
-                    onResponseType =
-                        Dict.get method.outputType pbTypes.types
-                            |> Maybe.withDefault Type.bool
-                            |> (\t ->
-                                    Type.function
-                                        [ Type.namedWith
-                                            [ "Result" ]
-                                            "Result"
-                                            [ Type.named [ "Nrpc" ] "Error"
-                                            , t
-                                            ]
-                                        ]
-                                    <|
-                                        Type.var "msg"
-                               )
-                 in
-                 Elm.function
-                    (subjectArgs
-                        ++ [ ( "onResponse", Just onResponseType ) ]
-                        ++ (Dict.get method.inputType pbTypes.types
-                                |> Maybe.map (\t -> [ ( "input", Just t ) ])
-                                |> Maybe.withDefault []
-                           )
-                    )
-                    (\args ->
-                        let
-                            sArgs =
-                                List.take (List.length subjectArgs) args
-                        in
-                        case List.drop (List.length subjectArgs) args of
-                            [ rArg, iArg ] ->
-                                Gen.Nrpc.request
-                                    (Dict.get method.inputType pbTypes.encoders
-                                        |> Maybe.withDefault (Elm.fn ( "i", Just Type.bool ) (\_ -> Elm.bool False))
-                                    )
-                                    (Dict.get method.outputType pbTypes.decoders
-                                        |> Maybe.withDefault (Elm.bool False)
-                                    )
-                                    (Elm.apply subjectFn (List.take (List.length subjectArgs) args))
-                                    iArg
-                                    rArg
-
-                            _ ->
-                                Elm.value
-                                    { importFrom = [ "Nats", "Effect" ]
-                                    , name = "none"
-                                    , annotation =
-                                        Just <|
-                                            Type.namedWith [ "Nats" ]
-                                                "Effect"
-                                                [ Type.named [ "Bytes" ] "Bytes"
-                                                , Type.var "msg"
+               , if not options.noRequest && not options.noReply then
+                   Elm.declaration fnName
+                        (let
+                            onResponseType =
+                                Dict.get method.outputType pbTypes.types
+                                    |> Maybe.withDefault Type.bool
+                                    |> (\t ->
+                                            Type.function
+                                                [ Type.namedWith
+                                                    [ "Result" ]
+                                                    "Result"
+                                                    [ Type.named [ "Nrpc" ] "Error"
+                                                    , t
+                                                    ]
                                                 ]
-                                    }
-                    )
-                )
-           ]
+                                            <|
+                                                Type.var "msg"
+                                       )
+                         in
+                         Elm.function
+                            (subjectArgs
+                                ++ [ ( "onResponse", Just onResponseType ) ]
+                                ++ (Dict.get method.inputType pbTypes.types
+                                        |> Maybe.map (\t -> [ ( "input", Just t ) ])
+                                        |> Maybe.withDefault []
+                                   )
+                            )
+                            (\args ->
+                                let
+                                    sArgs =
+                                        List.take (List.length subjectArgs) args
+                                in
+                                case List.drop (List.length subjectArgs) args of
+                                    [ rArg, iArg ] ->
+                                        Gen.Nrpc.call_.request
+                                            (Dict.get method.inputType pbTypes.encoders
+                                                |> Maybe.withDefault (Elm.fn ( "i", Just Type.bool ) (\_ -> Elm.bool False))
+                                            )
+                                            (Dict.get method.outputType pbTypes.decoders
+                                                |> Maybe.withDefault (Elm.bool False)
+                                            )
+                                            (Elm.apply subjectFn (List.take (List.length subjectArgs) args))
+                                            iArg
+                                            rArg
+
+                                    _ ->
+                                        Elm.value
+                                            { importFrom = [ "Nats", "Effect" ]
+                                            , name = "none"
+                                            , annotation =
+                                                Just <|
+                                                    Type.namedWith [ "Nats" ]
+                                                        "Effect"
+                                                        [ Type.named [ "Bytes" ] "Bytes"
+                                                        , Type.var "msg"
+                                                        ]
+                                            }
+                            )
+                        )
+                else if options.noRequest then
+                    Elm.declaration fnName
+                        (let
+                            onResponseType =
+                                Dict.get method.outputType pbTypes.types
+                                    |> Maybe.withDefault Type.bool
+                                    |> (\t ->
+                                            Type.function
+                                                [ Type.namedWith
+                                                    [ "Result" ]
+                                                    "Result"
+                                                    [ Type.named [ "Nrpc" ] "Error"
+                                                    , t
+                                                    ]
+                                                ]
+                                            <|
+                                                Type.var "msg"
+                                       )
+
+                                in
+                                Elm.function
+                                (subjectArgs ++ [("onResponse", Just onResponseType)])
+                                    (\args ->
+                                        let
+                                            sArgs =
+                                                List.take (List.length subjectArgs) args
+                                        in
+                                        case List.drop (List.length subjectArgs) args of
+                                            [ rArg ] ->
+                                                Gen.Nrpc.call_.subscribeToNoRequestMethod 
+                                                    (Elm.apply subjectFn (List.take (List.length subjectArgs) args))
+
+                                                    (Dict.get method.outputType pbTypes.decoders
+                                                        |> Maybe.withDefault (Elm.bool False)
+                                                    )
+                                                    rArg
+
+                                            _ ->
+                                                Elm.value
+                                                    { importFrom = [ "Nats", "Effect" ]
+                                                    , name = "none"
+                                                    , annotation =
+                                                        Just <|
+                                                            Type.namedWith [ "Nats" ]
+                                                                "Effect"
+                                                                [ Type.named [ "Bytes" ] "Bytes"
+                                                                , Type.var "msg"
+                                                                ]
+                                                    }
+                                                )
+                            )
+                else
+                   Elm.declaration fnName
+                        (
+                         Elm.function
+                            (subjectArgs
+                                ++ (Dict.get method.inputType pbTypes.types
+                                        |> Maybe.map (\t -> [ ( "input", Just t ) ])
+                                        |> Maybe.withDefault []
+                                   )
+                            )
+                            (\args ->
+                                let
+                                    sArgs =
+                                        List.take (List.length subjectArgs) args
+                                in
+                                case List.drop (List.length subjectArgs) args of
+                                    [ iArg ] ->
+                                        Gen.Nrpc.call_.requestNoReply
+                                            (Dict.get method.inputType pbTypes.encoders
+                                                |> Maybe.withDefault (Elm.fn ( "i", Just Type.bool ) (\_ -> Elm.bool False))
+                                            )
+                                            (Elm.apply subjectFn (List.take (List.length subjectArgs) args))
+                                            iArg
+
+                                    _ ->
+                                        Elm.value
+                                            { importFrom = [ "Nats", "Effect" ]
+                                            , name = "none"
+                                            , annotation =
+                                                Just <|
+                                                    Type.namedWith [ "Nats" ]
+                                                        "Effect"
+                                                        [ Type.named [ "Bytes" ] "Bytes"
+                                                        , Type.var "msg"
+                                                        ]
+                                            }
+                            )
+                        )
+               ]
+

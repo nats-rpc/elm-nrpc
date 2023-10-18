@@ -6,7 +6,9 @@
             "eriktim/elm-protocol-buffers": "1.2.0"
         },
         "local": [
-            "../src/"
+            "../src/",
+            "../src/Nrpc.elm",
+            "../src/Nrpc.elm"
         ]
     }
 }

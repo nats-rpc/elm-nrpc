@@ -85,13 +85,11 @@ mtNoReply__Subject packageParams serviceParams =
     String.join "." [ subject packageParams serviceParams, "mtnoreply" ]
 
 
-mtNoReply packageParams serviceParams onResponse input =
-    Nrpc.request
+mtNoReply packageParams serviceParams input =
+    Nrpc.requestNoReply
         Proto.Nrpc.encodeVoid
-        Proto.Nrpc.decodeNoReply
         (mtNoReply__Subject packageParams serviceParams)
         input
-        onResponse
 
 
 type alias MtNoRequestWParams__SubjectParams =
@@ -112,10 +110,8 @@ mtNoRequestWParams__Subject packageParams serviceParams params =
         ]
 
 
-mtNoRequestWParams packageParams serviceParams params onResponse input =
-    Nrpc.request
-        Proto.Nrpc.encodeNoRequest
-        Proto.Main.decodeSimpleStringReply
+mtNoRequestWParams packageParams serviceParams params onResponse =
+    Nrpc.subscribeToNoRequestMethod
         (mtNoRequestWParams__Subject packageParams serviceParams params)
-        input
+        Proto.Main.decodeSimpleStringReply
         onResponse

@@ -12226,6 +12226,225 @@ var $mdgriffith$elm_codegen$Elm$Annotation$typed = F3(
 			});
 	});
 var $mdgriffith$elm_codegen$Elm$Annotation$bool = A3($mdgriffith$elm_codegen$Elm$Annotation$typed, _List_Nil, 'Bool', _List_Nil);
+var $mdgriffith$elm_codegen$Elm$Annotation$string = A3($mdgriffith$elm_codegen$Elm$Annotation$typed, _List_Nil, 'String', _List_Nil);
+var $mdgriffith$elm_codegen$Elm$Annotation$unit = $mdgriffith$elm_codegen$Internal$Compiler$Annotation(
+	{aliases: $mdgriffith$elm_codegen$Internal$Compiler$emptyAliases, annotation: $stil4m$elm_syntax$Elm$Syntax$TypeAnnotation$Unit, imports: _List_Nil});
+var $mdgriffith$elm_codegen$Elm$Annotation$var = function (a) {
+	return $mdgriffith$elm_codegen$Internal$Compiler$Annotation(
+		{
+			aliases: $mdgriffith$elm_codegen$Internal$Compiler$emptyAliases,
+			annotation: $stil4m$elm_syntax$Elm$Syntax$TypeAnnotation$GenericType(
+				$mdgriffith$elm_codegen$Internal$Format$formatValue(a)),
+			imports: _List_Nil
+		});
+};
+var $author$project$Gen$Nrpc$call_ = {
+	request: F5(
+		function (requestArg, requestArg0, requestArg1, requestArg2, requestArg3) {
+			return A2(
+				$mdgriffith$elm_codegen$Elm$apply,
+				$mdgriffith$elm_codegen$Elm$value(
+					{
+						annotation: $elm$core$Maybe$Just(
+							A2(
+								$mdgriffith$elm_codegen$Elm$Annotation$function,
+								_List_fromArray(
+									[
+										A2(
+										$mdgriffith$elm_codegen$Elm$Annotation$function,
+										_List_fromArray(
+											[
+												$mdgriffith$elm_codegen$Elm$Annotation$var('arg')
+											]),
+										A3($mdgriffith$elm_codegen$Elm$Annotation$namedWith, _List_Nil, 'Encoder', _List_Nil)),
+										A3(
+										$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
+										_List_Nil,
+										'Decoder',
+										_List_fromArray(
+											[
+												$mdgriffith$elm_codegen$Elm$Annotation$var('result')
+											])),
+										$mdgriffith$elm_codegen$Elm$Annotation$string,
+										$mdgriffith$elm_codegen$Elm$Annotation$var('arg'),
+										A2(
+										$mdgriffith$elm_codegen$Elm$Annotation$function,
+										_List_fromArray(
+											[
+												A3(
+												$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
+												_List_Nil,
+												'Result',
+												_List_fromArray(
+													[
+														A3($mdgriffith$elm_codegen$Elm$Annotation$namedWith, _List_Nil, 'Error', _List_Nil),
+														$mdgriffith$elm_codegen$Elm$Annotation$var('result')
+													]))
+											]),
+										$mdgriffith$elm_codegen$Elm$Annotation$var('msg'))
+									]),
+								A3(
+									$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
+									_List_fromArray(
+										['Nats']),
+									'Effect',
+									_List_fromArray(
+										[
+											A3($mdgriffith$elm_codegen$Elm$Annotation$namedWith, _List_Nil, 'Bytes', _List_Nil),
+											$mdgriffith$elm_codegen$Elm$Annotation$var('msg')
+										])))),
+						importFrom: _List_fromArray(
+							['Nrpc']),
+						name: 'request'
+					}),
+				_List_fromArray(
+					[requestArg, requestArg0, requestArg1, requestArg2, requestArg3]));
+		}),
+	requestNoReply: F3(
+		function (requestNoReplyArg, requestNoReplyArg0, requestNoReplyArg1) {
+			return A2(
+				$mdgriffith$elm_codegen$Elm$apply,
+				$mdgriffith$elm_codegen$Elm$value(
+					{
+						annotation: $elm$core$Maybe$Just(
+							A2(
+								$mdgriffith$elm_codegen$Elm$Annotation$function,
+								_List_fromArray(
+									[
+										A2(
+										$mdgriffith$elm_codegen$Elm$Annotation$function,
+										_List_fromArray(
+											[
+												$mdgriffith$elm_codegen$Elm$Annotation$var('arg')
+											]),
+										A3($mdgriffith$elm_codegen$Elm$Annotation$namedWith, _List_Nil, 'Encoder', _List_Nil)),
+										$mdgriffith$elm_codegen$Elm$Annotation$string,
+										$mdgriffith$elm_codegen$Elm$Annotation$var('arg')
+									]),
+								A3(
+									$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
+									_List_fromArray(
+										['Nats']),
+									'Effect',
+									_List_fromArray(
+										[
+											A3($mdgriffith$elm_codegen$Elm$Annotation$namedWith, _List_Nil, 'Bytes', _List_Nil),
+											$mdgriffith$elm_codegen$Elm$Annotation$var('msg')
+										])))),
+						importFrom: _List_fromArray(
+							['Nrpc']),
+						name: 'requestNoReply'
+					}),
+				_List_fromArray(
+					[requestNoReplyArg, requestNoReplyArg0, requestNoReplyArg1]));
+		}),
+	requestVoidReply: F4(
+		function (requestVoidReplyArg, requestVoidReplyArg0, requestVoidReplyArg1, requestVoidReplyArg2) {
+			return A2(
+				$mdgriffith$elm_codegen$Elm$apply,
+				$mdgriffith$elm_codegen$Elm$value(
+					{
+						annotation: $elm$core$Maybe$Just(
+							A2(
+								$mdgriffith$elm_codegen$Elm$Annotation$function,
+								_List_fromArray(
+									[
+										A2(
+										$mdgriffith$elm_codegen$Elm$Annotation$function,
+										_List_fromArray(
+											[
+												$mdgriffith$elm_codegen$Elm$Annotation$var('arg')
+											]),
+										A3($mdgriffith$elm_codegen$Elm$Annotation$namedWith, _List_Nil, 'Encoder', _List_Nil)),
+										$mdgriffith$elm_codegen$Elm$Annotation$string,
+										$mdgriffith$elm_codegen$Elm$Annotation$var('arg'),
+										A2(
+										$mdgriffith$elm_codegen$Elm$Annotation$function,
+										_List_fromArray(
+											[
+												A3(
+												$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
+												_List_Nil,
+												'Result',
+												_List_fromArray(
+													[
+														A3($mdgriffith$elm_codegen$Elm$Annotation$namedWith, _List_Nil, 'Error', _List_Nil),
+														$mdgriffith$elm_codegen$Elm$Annotation$unit
+													]))
+											]),
+										$mdgriffith$elm_codegen$Elm$Annotation$var('msg'))
+									]),
+								A3(
+									$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
+									_List_fromArray(
+										['Nats']),
+									'Effect',
+									_List_fromArray(
+										[
+											A3($mdgriffith$elm_codegen$Elm$Annotation$namedWith, _List_Nil, 'Bytes', _List_Nil),
+											$mdgriffith$elm_codegen$Elm$Annotation$var('msg')
+										])))),
+						importFrom: _List_fromArray(
+							['Nrpc']),
+						name: 'requestVoidReply'
+					}),
+				_List_fromArray(
+					[requestVoidReplyArg, requestVoidReplyArg0, requestVoidReplyArg1, requestVoidReplyArg2]));
+		}),
+	subscribeToNoRequestMethod: F3(
+		function (subscribeToNoRequestMethodArg, subscribeToNoRequestMethodArg0, subscribeToNoRequestMethodArg1) {
+			return A2(
+				$mdgriffith$elm_codegen$Elm$apply,
+				$mdgriffith$elm_codegen$Elm$value(
+					{
+						annotation: $elm$core$Maybe$Just(
+							A2(
+								$mdgriffith$elm_codegen$Elm$Annotation$function,
+								_List_fromArray(
+									[
+										$mdgriffith$elm_codegen$Elm$Annotation$string,
+										A3(
+										$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
+										_List_Nil,
+										'Decoder',
+										_List_fromArray(
+											[
+												$mdgriffith$elm_codegen$Elm$Annotation$var('a')
+											])),
+										A2(
+										$mdgriffith$elm_codegen$Elm$Annotation$function,
+										_List_fromArray(
+											[
+												A3(
+												$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
+												_List_Nil,
+												'Result',
+												_List_fromArray(
+													[
+														A3($mdgriffith$elm_codegen$Elm$Annotation$namedWith, _List_Nil, 'Error', _List_Nil),
+														$mdgriffith$elm_codegen$Elm$Annotation$var('a')
+													]))
+											]),
+										$mdgriffith$elm_codegen$Elm$Annotation$var('msg'))
+									]),
+								A3(
+									$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
+									_List_fromArray(
+										['Nats']),
+									'Sub',
+									_List_fromArray(
+										[
+											A3($mdgriffith$elm_codegen$Elm$Annotation$namedWith, _List_Nil, 'Bytes', _List_Nil),
+											$mdgriffith$elm_codegen$Elm$Annotation$var('msg')
+										])))),
+						importFrom: _List_fromArray(
+							['Nrpc']),
+						name: 'subscribeToNoRequestMethod'
+					}),
+				_List_fromArray(
+					[subscribeToNoRequestMethodArg, subscribeToNoRequestMethodArg0, subscribeToNoRequestMethodArg1]));
+		})
+};
 var $elm$core$Char$toLower = _Char_toLower;
 var $elm_community$string_extra$String$Extra$decapitalize = function (word) {
 	return A2($elm_community$string_extra$String$Extra$changeCase, $elm$core$Char$toLower, word);
@@ -12560,7 +12779,6 @@ var $mdgriffith$elm_codegen$Elm$Annotation$list = function (inner) {
 		_List_fromArray(
 			[inner]));
 };
-var $mdgriffith$elm_codegen$Elm$Annotation$string = A3($mdgriffith$elm_codegen$Elm$Annotation$typed, _List_Nil, 'String', _List_Nil);
 var $author$project$Gen$String$join = F2(
 	function (joinArg, joinArg0) {
 		return A2(
@@ -12720,11 +12938,13 @@ var $author$project$Generate$methodOptions = F2(
 		}();
 		return A2(
 			$elm$core$Maybe$withDefault,
-			{streamedReply: false, subject: defaultSubject, subjectParams: _List_Nil},
+			{noReply: method.outputType === '.nrpc.NoReply', noRequest: method.inputType === 'nrpc.NoRequest', streamedReply: false, subject: defaultSubject, subjectParams: _List_Nil},
 			A2(
 				$elm$core$Maybe$map,
 				function (options) {
 					return {
+						noReply: method.outputType === '.nrpc.NoReply',
+						noRequest: method.inputType === '.nrpc.NoRequest',
 						streamedReply: options.nrpcStreamedReply,
 						subject: (options.nrpcMethodSubject === '') ? defaultSubject : options.nrpcMethodSubject,
 						subjectParams: options.nrpcMethodSubjectParams
@@ -12767,76 +12987,6 @@ var $mdgriffith$elm_codegen$Elm$Annotation$record = function (fields) {
 				fields)
 		});
 };
-var $mdgriffith$elm_codegen$Elm$Annotation$var = function (a) {
-	return $mdgriffith$elm_codegen$Internal$Compiler$Annotation(
-		{
-			aliases: $mdgriffith$elm_codegen$Internal$Compiler$emptyAliases,
-			annotation: $stil4m$elm_syntax$Elm$Syntax$TypeAnnotation$GenericType(
-				$mdgriffith$elm_codegen$Internal$Format$formatValue(a)),
-			imports: _List_Nil
-		});
-};
-var $author$project$Gen$Nrpc$request = F5(
-	function (requestArg, requestArg0, requestArg1, requestArg2, requestArg3) {
-		return A2(
-			$mdgriffith$elm_codegen$Elm$apply,
-			$mdgriffith$elm_codegen$Elm$value(
-				{
-					annotation: $elm$core$Maybe$Just(
-						A2(
-							$mdgriffith$elm_codegen$Elm$Annotation$function,
-							_List_fromArray(
-								[
-									A2(
-									$mdgriffith$elm_codegen$Elm$Annotation$function,
-									_List_fromArray(
-										[
-											$mdgriffith$elm_codegen$Elm$Annotation$var('arg')
-										]),
-									A3($mdgriffith$elm_codegen$Elm$Annotation$namedWith, _List_Nil, 'Encoder', _List_Nil)),
-									A3(
-									$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
-									_List_Nil,
-									'Decoder',
-									_List_fromArray(
-										[
-											$mdgriffith$elm_codegen$Elm$Annotation$var('result')
-										])),
-									$mdgriffith$elm_codegen$Elm$Annotation$string,
-									$mdgriffith$elm_codegen$Elm$Annotation$var('arg'),
-									A2(
-									$mdgriffith$elm_codegen$Elm$Annotation$function,
-									_List_fromArray(
-										[
-											A3(
-											$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
-											_List_Nil,
-											'Result',
-											_List_fromArray(
-												[
-													A3($mdgriffith$elm_codegen$Elm$Annotation$namedWith, _List_Nil, 'Error', _List_Nil),
-													$mdgriffith$elm_codegen$Elm$Annotation$var('result')
-												]))
-										]),
-									$mdgriffith$elm_codegen$Elm$Annotation$var('msg'))
-								]),
-							A3(
-								$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
-								_List_fromArray(
-									['Nats']),
-								'Effect',
-								_List_fromArray(
-									[
-										A3($mdgriffith$elm_codegen$Elm$Annotation$namedWith, _List_Nil, 'Bytes', _List_Nil),
-										$mdgriffith$elm_codegen$Elm$Annotation$var('msg')
-									])))),
-					importFrom: _List_fromArray(
-						['Nrpc']),
-					name: 'request'
-				}),
-			_List_fromArray(
-				[requestArg, requestArg0, requestArg1, requestArg2, requestArg3]));
-	});
 var $stil4m$elm_syntax$Elm$Syntax$Expression$Literal = function (a) {
 	return {$: 'Literal', a: a};
 };
@@ -12986,11 +13136,11 @@ var $author$project$Generate$generateMethodDeclaration = F6(
 	function (pbTypes, fOptions, fAPI, sOptions, sAPI, method) {
 		var options = A2($author$project$Generate$methodOptions, fOptions, method);
 		var subjectParams = function () {
-			var _v7 = options.subjectParams;
-			if (!_v7.b) {
+			var _v10 = options.subjectParams;
+			if (!_v10.b) {
 				return $elm$core$Maybe$Nothing;
 			} else {
-				var params = _v7;
+				var params = _v10;
 				var typename = $elm_community$string_extra$String$Extra$toSentenceCase(method.name) + '__SubjectParams';
 				var annotation = $mdgriffith$elm_codegen$Elm$Annotation$record(
 					A2(
@@ -13114,7 +13264,7 @@ var $author$project$Generate$generateMethodDeclaration = F6(
 												}
 											}()))));
 						})),
-					A2(
+					((!options.noRequest) && (!options.noReply)) ? A2(
 					$mdgriffith$elm_codegen$Elm$declaration,
 					fnName,
 					function () {
@@ -13183,7 +13333,7 @@ var $author$project$Generate$generateMethodDeclaration = F6(
 									var _v5 = _v4.b;
 									var iArg = _v5.a;
 									return A5(
-										$author$project$Gen$Nrpc$request,
+										$author$project$Gen$Nrpc$call_.request,
 										A2(
 											$elm$core$Maybe$withDefault,
 											A2(
@@ -13232,7 +13382,172 @@ var $author$project$Generate$generateMethodDeclaration = F6(
 										});
 								}
 							});
-					}())
+					}()) : (options.noRequest ? A2(
+					$mdgriffith$elm_codegen$Elm$declaration,
+					fnName,
+					function () {
+						var onResponseType = function (t) {
+							return A2(
+								$mdgriffith$elm_codegen$Elm$Annotation$function,
+								_List_fromArray(
+									[
+										A3(
+										$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
+										_List_fromArray(
+											['Result']),
+										'Result',
+										_List_fromArray(
+											[
+												A2(
+												$mdgriffith$elm_codegen$Elm$Annotation$named,
+												_List_fromArray(
+													['Nrpc']),
+												'Error'),
+												t
+											]))
+									]),
+								$mdgriffith$elm_codegen$Elm$Annotation$var('msg'));
+						}(
+							A2(
+								$elm$core$Maybe$withDefault,
+								$mdgriffith$elm_codegen$Elm$Annotation$bool,
+								A2($elm$core$Dict$get, method.outputType, pbTypes.types)));
+						return A2(
+							$mdgriffith$elm_codegen$Elm$function,
+							_Utils_ap(
+								subjectArgs,
+								_List_fromArray(
+									[
+										_Utils_Tuple2(
+										'onResponse',
+										$elm$core$Maybe$Just(onResponseType))
+									])),
+							function (args) {
+								var sArgs = A2(
+									$elm$core$List$take,
+									$elm$core$List$length(subjectArgs),
+									args);
+								var _v7 = A2(
+									$elm$core$List$drop,
+									$elm$core$List$length(subjectArgs),
+									args);
+								if (_v7.b && (!_v7.b.b)) {
+									var rArg = _v7.a;
+									return A3(
+										$author$project$Gen$Nrpc$call_.subscribeToNoRequestMethod,
+										A2(
+											$mdgriffith$elm_codegen$Elm$apply,
+											subjectFn,
+											A2(
+												$elm$core$List$take,
+												$elm$core$List$length(subjectArgs),
+												args)),
+										A2(
+											$elm$core$Maybe$withDefault,
+											$mdgriffith$elm_codegen$Elm$bool(false),
+											A2($elm$core$Dict$get, method.outputType, pbTypes.decoders)),
+										rArg);
+								} else {
+									return $mdgriffith$elm_codegen$Elm$value(
+										{
+											annotation: $elm$core$Maybe$Just(
+												A3(
+													$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
+													_List_fromArray(
+														['Nats']),
+													'Effect',
+													_List_fromArray(
+														[
+															A2(
+															$mdgriffith$elm_codegen$Elm$Annotation$named,
+															_List_fromArray(
+																['Bytes']),
+															'Bytes'),
+															$mdgriffith$elm_codegen$Elm$Annotation$var('msg')
+														]))),
+											importFrom: _List_fromArray(
+												['Nats', 'Effect']),
+											name: 'none'
+										});
+								}
+							});
+					}()) : A2(
+					$mdgriffith$elm_codegen$Elm$declaration,
+					fnName,
+					A2(
+						$mdgriffith$elm_codegen$Elm$function,
+						_Utils_ap(
+							subjectArgs,
+							A2(
+								$elm$core$Maybe$withDefault,
+								_List_Nil,
+								A2(
+									$elm$core$Maybe$map,
+									function (t) {
+										return _List_fromArray(
+											[
+												_Utils_Tuple2(
+												'input',
+												$elm$core$Maybe$Just(t))
+											]);
+									},
+									A2($elm$core$Dict$get, method.inputType, pbTypes.types)))),
+						function (args) {
+							var sArgs = A2(
+								$elm$core$List$take,
+								$elm$core$List$length(subjectArgs),
+								args);
+							var _v8 = A2(
+								$elm$core$List$drop,
+								$elm$core$List$length(subjectArgs),
+								args);
+							if (_v8.b && (!_v8.b.b)) {
+								var iArg = _v8.a;
+								return A3(
+									$author$project$Gen$Nrpc$call_.requestNoReply,
+									A2(
+										$elm$core$Maybe$withDefault,
+										A2(
+											$mdgriffith$elm_codegen$Elm$fn,
+											_Utils_Tuple2(
+												'i',
+												$elm$core$Maybe$Just($mdgriffith$elm_codegen$Elm$Annotation$bool)),
+											function (_v9) {
+												return $mdgriffith$elm_codegen$Elm$bool(false);
+											}),
+										A2($elm$core$Dict$get, method.inputType, pbTypes.encoders)),
+									A2(
+										$mdgriffith$elm_codegen$Elm$apply,
+										subjectFn,
+										A2(
+											$elm$core$List$take,
+											$elm$core$List$length(subjectArgs),
+											args)),
+									iArg);
+							} else {
+								return $mdgriffith$elm_codegen$Elm$value(
+									{
+										annotation: $elm$core$Maybe$Just(
+											A3(
+												$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
+												_List_fromArray(
+													['Nats']),
+												'Effect',
+												_List_fromArray(
+													[
+														A2(
+														$mdgriffith$elm_codegen$Elm$Annotation$named,
+														_List_fromArray(
+															['Bytes']),
+														'Bytes'),
+														$mdgriffith$elm_codegen$Elm$Annotation$var('msg')
+													]))),
+										importFrom: _List_fromArray(
+											['Nats', 'Effect']),
+										name: 'none'
+									});
+							}
+						})))
 				]));
 	});
 var $author$project$Generate$serviceOptions = F2(

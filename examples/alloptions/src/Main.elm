@@ -33,6 +33,7 @@ type alias Model =
     , socket : Nats.Socket.Socket
     , simpleStringReply : Maybe (Result Nrpc.Error Proto.Main.SimpleStringReply)
     , voidReply : Maybe (Result Nrpc.Error Proto.Nrpc.Void)
+    , svcCustomSubjectMtNoRequestResponse : Maybe (Result Nrpc.Error Proto.Main.SimpleStringReply)
     }
 
 
@@ -41,7 +42,9 @@ type Msg
     | OnSocketEvent Nats.Events.SocketEvent
     | CallSimpleReply String
     | CallVoidReply String
+    | CallNoReply
     | OnSimpleReplyResponse (Result Nrpc.Error Proto.Main.SimpleStringReply)
+    | OnNoRequestResponse (Result Nrpc.Error Proto.Main.SimpleStringReply)
     | OnVoidReply (Result Nrpc.Error Proto.Nrpc.Void)
 
 
@@ -100,6 +103,7 @@ init { now } =
                 |> Nats.Socket.withDebug True
       , simpleStringReply = Nothing
       , voidReply = Nothing
+      , svcCustomSubjectMtNoRequestResponse = Nothing
       }
     , Cmd.none
     )
@@ -132,6 +136,12 @@ innerUpdate msg model =
             , Cmd.none
             )
 
+        OnNoRequestResponse reply ->
+            ( { model | svcCustomSubjectMtNoRequestResponse = Just reply }
+            , Nats.Effect.none
+            , Cmd.none
+            )
+
         CallSimpleReply instance ->
             ( model
             , Nrpc.Main.SvcCustomSubject.mtSimpleReply { instance = instance }
@@ -160,6 +170,14 @@ innerUpdate msg model =
             , Cmd.none
             )
 
+        CallNoReply ->
+            ( model
+            , Nrpc.Main.SvcSubjectParams.mtNoReply { instance = "default" }
+                { clientid = "client1" }
+                {}
+            , Cmd.none
+            )
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -177,12 +195,15 @@ update msg model =
 
 natsSubscriptions : Model -> Nats.Sub Bytes Msg
 natsSubscriptions model =
-    Nats.connect
-        (Nats.Socket.connectOptions "nrpc demo" "0.1"
-            |> Nats.Socket.withUserPass "test" "test"
-        )
-        model.socket
-        OnSocketEvent
+    Nats.Sub.batch
+        [ Nats.connect
+            (Nats.Socket.connectOptions "nrpc demo" "0.1"
+                |> Nats.Socket.withUserPass "test" "test"
+            )
+            model.socket
+            OnSocketEvent
+        , Nrpc.Main.SvcCustomSubject.mtNoRequest { instance = "default" } OnNoRequestResponse
+        ]
 
 
 subscriptions : Model -> Sub Msg
@@ -269,6 +290,11 @@ view model =
                     ]
               ]
             , [ Html.h4 [] [ Html.text "Subject Params" ]
+              , ul []
+                    [ li []
+                        [ button [ onClick <| CallNoReply ] [ Html.text "MtNoReply" ]
+                        ]
+                    ]
               ]
             , [ Html.h4 [] [ Html.text "Replies" ]
               , ul []
@@ -286,6 +312,15 @@ view model =
                             ("Void Reply: "
                                 ++ (model.voidReply
                                         |> Maybe.map printVoidReply
+                                        |> Maybe.withDefault ""
+                                   )
+                            )
+                        ]
+                    , li []
+                        [ text
+                            ("SvcCustomSubject.MtNoRequest: "
+                                ++ (model.svcCustomSubjectMtNoRequestResponse
+                                        |> Maybe.map printSimpleStringReply
                                         |> Maybe.withDefault ""
                                    )
                             )

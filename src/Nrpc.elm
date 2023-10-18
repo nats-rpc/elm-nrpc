@@ -1,12 +1,12 @@
 module Nrpc exposing
-    ( Error(..), request, requestVoidReply
+    ( Error(..), request, requestVoidReply, requestNoReply
     , subscribeToNoRequestMethod
       --, requestSubscribe, requestSubscribeVoidReply
     )
 
 {-| Utilities for Nrpc generated code
 
-@docs Error, request, requestVoidReply
+@docs Error, request, requestVoidReply, requestNoReply
 @docs requestSubscribe, requestSubscribeVoidReply
 
 -}
@@ -95,6 +95,16 @@ requestVoidReply encode subject arg tagger =
     Nats.request subject
         (encode arg |> Protobuf.Encode.encode)
         (handleVoidResponse >> tagger)
+
+
+requestNoReply :
+    (arg -> Encoder)
+    -> String
+    -> arg
+    -> Nats.Effect Bytes msg
+requestNoReply encode subject arg =
+    Nats.publish subject
+        (encode arg |> Protobuf.Encode.encode)
 
 
 

@@ -5834,6 +5834,7 @@ var $author$project$Main$init = function (_v0) {
 				$author$project$Nats$Socket$withDebug,
 				true,
 				A2($author$project$Nats$Socket$new, '0', 'ws://localhost:8087')),
+			svcCustomSubjectMtNoRequestResponse: $elm$core$Maybe$Nothing,
 			voidReply: $elm$core$Maybe$Nothing
 		},
 		$elm$core$Platform$Cmd$none);
@@ -9143,6 +9144,261 @@ var $author$project$Main$OnSimpleReplyResponse = function (a) {
 var $author$project$Main$OnVoidReply = function (a) {
 	return {$: 'OnVoidReply', a: a};
 };
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$Encoder = F2(
+	function (a, b) {
+		return {$: 'Encoder', a: a, b: b};
+	});
+var $eriktim$elm_protocol_buffers$Internal$Protobuf$LengthDelimited = function (a) {
+	return {$: 'LengthDelimited', a: a};
+};
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$sequence = function (items) {
+	var width = $elm$core$List$sum(
+		A2($elm$core$List$map, $elm$core$Tuple$first, items));
+	return _Utils_Tuple2(
+		width,
+		$elm$bytes$Bytes$Encode$sequence(
+			A2($elm$core$List$map, $elm$core$Tuple$second, items)));
+};
+var $elm$core$List$sortBy = _List_sortBy;
+var $elm$core$Tuple$pair = F2(
+	function (a, b) {
+		return _Utils_Tuple2(a, b);
+	});
+var $elm$core$Basics$pow = _Basics_pow;
+var $eriktim$elm_protocol_buffers$Internal$Int32$fromSigned = function (value) {
+	return (value < 0) ? (value + A2($elm$core$Basics$pow, 2, 32)) : value;
+};
+var $eriktim$elm_protocol_buffers$Internal$Int32$fromZigZag = function (value) {
+	return (value >>> 1) ^ ((-1) * (1 & value));
+};
+var $eriktim$elm_protocol_buffers$Internal$Int32$popBase128 = function (value) {
+	var higherBits = value >>> 7;
+	var base128 = 127 & value;
+	return _Utils_Tuple2(base128, higherBits);
+};
+var $eriktim$elm_protocol_buffers$Internal$Int32$pushBase128 = F2(
+	function (base128, _int) {
+		return base128 + (_int << 7);
+	});
+var $elm$core$Basics$ge = _Utils_ge;
+var $eriktim$elm_protocol_buffers$Internal$Int32$toSigned = function (value) {
+	return (_Utils_cmp(
+		value,
+		A2($elm$core$Basics$pow, 2, 31)) > -1) ? (value - A2($elm$core$Basics$pow, 2, 32)) : value;
+};
+var $elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
+var $eriktim$elm_protocol_buffers$Internal$Int32$toZigZag = function (value) {
+	return (value >> 31) ^ (value << 1);
+};
+var $eriktim$elm_protocol_buffers$Internal$Int32$operations = {fromBase128: $elm$core$Basics$identity, fromSigned: $eriktim$elm_protocol_buffers$Internal$Int32$fromSigned, fromZigZag: $eriktim$elm_protocol_buffers$Internal$Int32$fromZigZag, popBase128: $eriktim$elm_protocol_buffers$Internal$Int32$popBase128, pushBase128: $eriktim$elm_protocol_buffers$Internal$Int32$pushBase128, toSigned: $eriktim$elm_protocol_buffers$Internal$Int32$toSigned, toZigZag: $eriktim$elm_protocol_buffers$Internal$Int32$toZigZag};
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$toVarIntEncoders = F2(
+	function (config, value) {
+		var _v0 = config.popBase128(value);
+		var base128 = _v0.a;
+		var higherBits = _v0.b;
+		return _Utils_eq(
+			higherBits,
+			config.fromBase128(0)) ? _List_fromArray(
+			[
+				$elm$bytes$Bytes$Encode$unsignedInt8(base128)
+			]) : A2(
+			$elm$core$List$cons,
+			$elm$bytes$Bytes$Encode$unsignedInt8(128 | base128),
+			A2($eriktim$elm_protocol_buffers$Protobuf$Encode$toVarIntEncoders, config, higherBits));
+	});
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$varInt = F2(
+	function (config, value) {
+		var encoders = A2($eriktim$elm_protocol_buffers$Protobuf$Encode$toVarIntEncoders, config, value);
+		return _Utils_Tuple2(
+			$elm$core$List$length(encoders),
+			$elm$bytes$Bytes$Encode$sequence(encoders));
+	});
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$varInt32 = $eriktim$elm_protocol_buffers$Protobuf$Encode$varInt($eriktim$elm_protocol_buffers$Internal$Int32$operations);
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$tag = F2(
+	function (fieldNumber, wireType) {
+		var encodeTag = function (base4) {
+			return $eriktim$elm_protocol_buffers$Protobuf$Encode$varInt32((fieldNumber << 3) | base4);
+		};
+		switch (wireType.$) {
+			case 'VarInt':
+				return encodeTag(0);
+			case 'Bit64':
+				return encodeTag(1);
+			case 'LengthDelimited':
+				var width = wireType.a;
+				return $eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(
+					_List_fromArray(
+						[
+							encodeTag(2),
+							$eriktim$elm_protocol_buffers$Protobuf$Encode$varInt32(width)
+						]));
+			case 'StartGroup':
+				return encodeTag(3);
+			case 'EndGroup':
+				return encodeTag(4);
+			default:
+				return encodeTag(5);
+		}
+	});
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$unwrap = function (encoder) {
+	if (encoder.$ === 'Encoder') {
+		var encoder_ = encoder.b;
+		return $elm$core$Maybe$Just(encoder_);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$toPackedEncoder = function (encoders) {
+	if (encoders.b && (encoders.a.$ === 'Encoder')) {
+		var _v1 = encoders.a;
+		var wireType = _v1.a;
+		var encoder = _v1.b;
+		var others = encoders.b;
+		if (wireType.$ === 'LengthDelimited') {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			return $elm$core$Maybe$Just(
+				$eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(
+					A2(
+						$elm$core$List$cons,
+						encoder,
+						A2($elm$core$List$filterMap, $eriktim$elm_protocol_buffers$Protobuf$Encode$unwrap, others))));
+		}
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$toKeyValuePairEncoder = function (_v0) {
+	var fieldNumber = _v0.a;
+	var encoder = _v0.b;
+	switch (encoder.$) {
+		case 'Encoder':
+			var wireType = encoder.a;
+			var encoder_ = encoder.b;
+			return $eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(
+				_List_fromArray(
+					[
+						A2($eriktim$elm_protocol_buffers$Protobuf$Encode$tag, fieldNumber, wireType),
+						encoder_
+					]));
+		case 'ListEncoder':
+			var encoders = encoder.a;
+			var _v2 = $eriktim$elm_protocol_buffers$Protobuf$Encode$toPackedEncoder(encoders);
+			if (_v2.$ === 'Just') {
+				var encoder_ = _v2.a;
+				return $eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(
+					_List_fromArray(
+						[
+							A2(
+							$eriktim$elm_protocol_buffers$Protobuf$Encode$tag,
+							fieldNumber,
+							$eriktim$elm_protocol_buffers$Internal$Protobuf$LengthDelimited(encoder_.a)),
+							encoder_
+						]));
+			} else {
+				return $eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(
+					A2(
+						$elm$core$List$map,
+						A2(
+							$elm$core$Basics$composeL,
+							$eriktim$elm_protocol_buffers$Protobuf$Encode$toKeyValuePairEncoder,
+							$elm$core$Tuple$pair(fieldNumber)),
+						encoders));
+			}
+		default:
+			return $eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(_List_Nil);
+	}
+};
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$message = function (items) {
+	return function (e) {
+		return A2(
+			$eriktim$elm_protocol_buffers$Protobuf$Encode$Encoder,
+			$eriktim$elm_protocol_buffers$Internal$Protobuf$LengthDelimited(e.a),
+			e);
+	}(
+		$eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(
+			A2(
+				$elm$core$List$map,
+				$eriktim$elm_protocol_buffers$Protobuf$Encode$toKeyValuePairEncoder,
+				A2($elm$core$List$sortBy, $elm$core$Tuple$first, items))));
+};
+var $author$project$Proto$Nrpc$Internals_$encodeProto__Nrpc__Void = function (_v0) {
+	return $eriktim$elm_protocol_buffers$Protobuf$Encode$message(_List_Nil);
+};
+var $author$project$Proto$Nrpc$encodeVoid = $author$project$Proto$Nrpc$Internals_$encodeProto__Nrpc__Void;
+var $author$project$Nrpc$Main$subject = function (params) {
+	return A2(
+		$elm$core$String$join,
+		'.',
+		_List_fromArray(
+			['root', params.instance]));
+};
+var $author$project$Nrpc$Main$SvcSubjectParams$subject = F2(
+	function (packageParams, params) {
+		return A2(
+			$elm$core$String$join,
+			'.',
+			_List_fromArray(
+				[
+					$author$project$Nrpc$Main$subject(packageParams),
+					'svcsubjectparams',
+					params.clientid
+				]));
+	});
+var $author$project$Nrpc$Main$SvcSubjectParams$mtNoReply__Subject = F2(
+	function (packageParams, serviceParams) {
+		return A2(
+			$elm$core$String$join,
+			'.',
+			_List_fromArray(
+				[
+					A2($author$project$Nrpc$Main$SvcSubjectParams$subject, packageParams, serviceParams),
+					'mtnoreply'
+				]));
+	});
+var $eriktim$elm_protocol_buffers$Protobuf$Encode$encode = function (encoder) {
+	switch (encoder.$) {
+		case 'Encoder':
+			var _v1 = encoder.b;
+			var encoder_ = _v1.b;
+			return $elm$bytes$Bytes$Encode$encode(encoder_);
+		case 'ListEncoder':
+			var encoders = encoder.a;
+			return $elm$bytes$Bytes$Encode$encode(
+				$elm$bytes$Bytes$Encode$sequence(
+					A2(
+						$elm$core$List$map,
+						A2($elm$core$Basics$composeL, $elm$bytes$Bytes$Encode$bytes, $eriktim$elm_protocol_buffers$Protobuf$Encode$encode),
+						encoders)));
+		default:
+			return $elm$bytes$Bytes$Encode$encode(
+				$elm$bytes$Bytes$Encode$sequence(_List_Nil));
+	}
+};
+var $author$project$Nats$Internal$Types$Pub = function (a) {
+	return {$: 'Pub', a: a};
+};
+var $author$project$Nats$publish = F2(
+	function (subject, message) {
+		return $author$project$Nats$Internal$Types$Pub(
+			{message: message, replyTo: $elm$core$Maybe$Nothing, sid: $elm$core$Maybe$Nothing, subject: subject});
+	});
+var $author$project$Nrpc$requestNoReply = F3(
+	function (encode, subject, arg) {
+		return A2(
+			$author$project$Nats$publish,
+			subject,
+			$eriktim$elm_protocol_buffers$Protobuf$Encode$encode(
+				encode(arg)));
+	});
+var $author$project$Nrpc$Main$SvcSubjectParams$mtNoReply = F3(
+	function (packageParams, serviceParams, input) {
+		return A3(
+			$author$project$Nrpc$requestNoReply,
+			$author$project$Proto$Nrpc$encodeVoid,
+			A2($author$project$Nrpc$Main$SvcSubjectParams$mtNoReply__Subject, packageParams, serviceParams),
+			input);
+	});
 var $author$project$Proto$Main$Internals_$defaultProto__Main__SimpleStringReply = {reply: ''};
 var $eriktim$elm_protocol_buffers$Protobuf$Decode$Decoder = function (a) {
 	return {$: 'Decoder', a: a};
@@ -9542,38 +9798,8 @@ var $elm$core$Set$remove = F2(
 var $eriktim$elm_protocol_buffers$Internal$Protobuf$Bit32 = {$: 'Bit32'};
 var $eriktim$elm_protocol_buffers$Internal$Protobuf$Bit64 = {$: 'Bit64'};
 var $eriktim$elm_protocol_buffers$Internal$Protobuf$EndGroup = {$: 'EndGroup'};
-var $eriktim$elm_protocol_buffers$Internal$Protobuf$LengthDelimited = function (a) {
-	return {$: 'LengthDelimited', a: a};
-};
 var $eriktim$elm_protocol_buffers$Internal$Protobuf$StartGroup = {$: 'StartGroup'};
 var $eriktim$elm_protocol_buffers$Internal$Protobuf$VarInt = {$: 'VarInt'};
-var $elm$core$Basics$pow = _Basics_pow;
-var $eriktim$elm_protocol_buffers$Internal$Int32$fromSigned = function (value) {
-	return (value < 0) ? (value + A2($elm$core$Basics$pow, 2, 32)) : value;
-};
-var $eriktim$elm_protocol_buffers$Internal$Int32$fromZigZag = function (value) {
-	return (value >>> 1) ^ ((-1) * (1 & value));
-};
-var $eriktim$elm_protocol_buffers$Internal$Int32$popBase128 = function (value) {
-	var higherBits = value >>> 7;
-	var base128 = 127 & value;
-	return _Utils_Tuple2(base128, higherBits);
-};
-var $eriktim$elm_protocol_buffers$Internal$Int32$pushBase128 = F2(
-	function (base128, _int) {
-		return base128 + (_int << 7);
-	});
-var $elm$core$Basics$ge = _Utils_ge;
-var $eriktim$elm_protocol_buffers$Internal$Int32$toSigned = function (value) {
-	return (_Utils_cmp(
-		value,
-		A2($elm$core$Basics$pow, 2, 31)) > -1) ? (value - A2($elm$core$Basics$pow, 2, 32)) : value;
-};
-var $elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
-var $eriktim$elm_protocol_buffers$Internal$Int32$toZigZag = function (value) {
-	return (value >> 31) ^ (value << 1);
-};
-var $eriktim$elm_protocol_buffers$Internal$Int32$operations = {fromBase128: $elm$core$Basics$identity, fromSigned: $eriktim$elm_protocol_buffers$Internal$Int32$fromSigned, fromZigZag: $eriktim$elm_protocol_buffers$Internal$Int32$fromZigZag, popBase128: $eriktim$elm_protocol_buffers$Internal$Int32$popBase128, pushBase128: $eriktim$elm_protocol_buffers$Internal$Int32$pushBase128, toSigned: $eriktim$elm_protocol_buffers$Internal$Int32$toSigned, toZigZag: $eriktim$elm_protocol_buffers$Internal$Int32$toZigZag};
 var $eriktim$elm_protocol_buffers$Protobuf$Decode$varIntDecoder = function (config) {
 	return A2(
 		$elm$bytes$Bytes$Decode$andThen,
@@ -9781,10 +10007,6 @@ var $eriktim$elm_protocol_buffers$Protobuf$Decode$optional = F3(
 					A2($eriktim$elm_protocol_buffers$Protobuf$Decode$map, set, decoder))
 				]));
 	});
-var $elm$core$Tuple$pair = F2(
-	function (a, b) {
-		return _Utils_Tuple2(a, b);
-	});
 var $eriktim$elm_protocol_buffers$Protobuf$Decode$lengthDelimitedDecoder = function (decoder) {
 	return $eriktim$elm_protocol_buffers$Protobuf$Decode$Decoder(
 		function (wireType) {
@@ -9817,150 +10039,6 @@ var $author$project$Proto$Main$Internals_$decodeProto__Main__SimpleStringReply =
 				}))
 		]));
 var $author$project$Proto$Main$decodeSimpleStringReply = $author$project$Proto$Main$Internals_$decodeProto__Main__SimpleStringReply;
-var $eriktim$elm_protocol_buffers$Protobuf$Encode$Encoder = F2(
-	function (a, b) {
-		return {$: 'Encoder', a: a, b: b};
-	});
-var $eriktim$elm_protocol_buffers$Protobuf$Encode$sequence = function (items) {
-	var width = $elm$core$List$sum(
-		A2($elm$core$List$map, $elm$core$Tuple$first, items));
-	return _Utils_Tuple2(
-		width,
-		$elm$bytes$Bytes$Encode$sequence(
-			A2($elm$core$List$map, $elm$core$Tuple$second, items)));
-};
-var $elm$core$List$sortBy = _List_sortBy;
-var $eriktim$elm_protocol_buffers$Protobuf$Encode$toVarIntEncoders = F2(
-	function (config, value) {
-		var _v0 = config.popBase128(value);
-		var base128 = _v0.a;
-		var higherBits = _v0.b;
-		return _Utils_eq(
-			higherBits,
-			config.fromBase128(0)) ? _List_fromArray(
-			[
-				$elm$bytes$Bytes$Encode$unsignedInt8(base128)
-			]) : A2(
-			$elm$core$List$cons,
-			$elm$bytes$Bytes$Encode$unsignedInt8(128 | base128),
-			A2($eriktim$elm_protocol_buffers$Protobuf$Encode$toVarIntEncoders, config, higherBits));
-	});
-var $eriktim$elm_protocol_buffers$Protobuf$Encode$varInt = F2(
-	function (config, value) {
-		var encoders = A2($eriktim$elm_protocol_buffers$Protobuf$Encode$toVarIntEncoders, config, value);
-		return _Utils_Tuple2(
-			$elm$core$List$length(encoders),
-			$elm$bytes$Bytes$Encode$sequence(encoders));
-	});
-var $eriktim$elm_protocol_buffers$Protobuf$Encode$varInt32 = $eriktim$elm_protocol_buffers$Protobuf$Encode$varInt($eriktim$elm_protocol_buffers$Internal$Int32$operations);
-var $eriktim$elm_protocol_buffers$Protobuf$Encode$tag = F2(
-	function (fieldNumber, wireType) {
-		var encodeTag = function (base4) {
-			return $eriktim$elm_protocol_buffers$Protobuf$Encode$varInt32((fieldNumber << 3) | base4);
-		};
-		switch (wireType.$) {
-			case 'VarInt':
-				return encodeTag(0);
-			case 'Bit64':
-				return encodeTag(1);
-			case 'LengthDelimited':
-				var width = wireType.a;
-				return $eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(
-					_List_fromArray(
-						[
-							encodeTag(2),
-							$eriktim$elm_protocol_buffers$Protobuf$Encode$varInt32(width)
-						]));
-			case 'StartGroup':
-				return encodeTag(3);
-			case 'EndGroup':
-				return encodeTag(4);
-			default:
-				return encodeTag(5);
-		}
-	});
-var $eriktim$elm_protocol_buffers$Protobuf$Encode$unwrap = function (encoder) {
-	if (encoder.$ === 'Encoder') {
-		var encoder_ = encoder.b;
-		return $elm$core$Maybe$Just(encoder_);
-	} else {
-		return $elm$core$Maybe$Nothing;
-	}
-};
-var $eriktim$elm_protocol_buffers$Protobuf$Encode$toPackedEncoder = function (encoders) {
-	if (encoders.b && (encoders.a.$ === 'Encoder')) {
-		var _v1 = encoders.a;
-		var wireType = _v1.a;
-		var encoder = _v1.b;
-		var others = encoders.b;
-		if (wireType.$ === 'LengthDelimited') {
-			return $elm$core$Maybe$Nothing;
-		} else {
-			return $elm$core$Maybe$Just(
-				$eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(
-					A2(
-						$elm$core$List$cons,
-						encoder,
-						A2($elm$core$List$filterMap, $eriktim$elm_protocol_buffers$Protobuf$Encode$unwrap, others))));
-		}
-	} else {
-		return $elm$core$Maybe$Nothing;
-	}
-};
-var $eriktim$elm_protocol_buffers$Protobuf$Encode$toKeyValuePairEncoder = function (_v0) {
-	var fieldNumber = _v0.a;
-	var encoder = _v0.b;
-	switch (encoder.$) {
-		case 'Encoder':
-			var wireType = encoder.a;
-			var encoder_ = encoder.b;
-			return $eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(
-				_List_fromArray(
-					[
-						A2($eriktim$elm_protocol_buffers$Protobuf$Encode$tag, fieldNumber, wireType),
-						encoder_
-					]));
-		case 'ListEncoder':
-			var encoders = encoder.a;
-			var _v2 = $eriktim$elm_protocol_buffers$Protobuf$Encode$toPackedEncoder(encoders);
-			if (_v2.$ === 'Just') {
-				var encoder_ = _v2.a;
-				return $eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(
-					_List_fromArray(
-						[
-							A2(
-							$eriktim$elm_protocol_buffers$Protobuf$Encode$tag,
-							fieldNumber,
-							$eriktim$elm_protocol_buffers$Internal$Protobuf$LengthDelimited(encoder_.a)),
-							encoder_
-						]));
-			} else {
-				return $eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(
-					A2(
-						$elm$core$List$map,
-						A2(
-							$elm$core$Basics$composeL,
-							$eriktim$elm_protocol_buffers$Protobuf$Encode$toKeyValuePairEncoder,
-							$elm$core$Tuple$pair(fieldNumber)),
-						encoders));
-			}
-		default:
-			return $eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(_List_Nil);
-	}
-};
-var $eriktim$elm_protocol_buffers$Protobuf$Encode$message = function (items) {
-	return function (e) {
-		return A2(
-			$eriktim$elm_protocol_buffers$Protobuf$Encode$Encoder,
-			$eriktim$elm_protocol_buffers$Internal$Protobuf$LengthDelimited(e.a),
-			e);
-	}(
-		$eriktim$elm_protocol_buffers$Protobuf$Encode$sequence(
-			A2(
-				$elm$core$List$map,
-				$eriktim$elm_protocol_buffers$Protobuf$Encode$toKeyValuePairEncoder,
-				A2($elm$core$List$sortBy, $elm$core$Tuple$first, items))));
-};
 var $elm$bytes$Bytes$Encode$getStringWidth = _Bytes_getStringWidth;
 var $eriktim$elm_protocol_buffers$Protobuf$Encode$string = function (v) {
 	var width = $elm$bytes$Bytes$Encode$getStringWidth(v);
@@ -9981,13 +10059,6 @@ var $author$project$Proto$Main$Internals_$encodeProto__Main__StringArg = functio
 			]));
 };
 var $author$project$Proto$Main$encodeStringArg = $author$project$Proto$Main$Internals_$encodeProto__Main__StringArg;
-var $author$project$Nrpc$Main$subject = function (params) {
-	return A2(
-		$elm$core$String$join,
-		'.',
-		_List_fromArray(
-			['root', params.instance]));
-};
 var $author$project$Nrpc$Main$SvcCustomSubject$subject = function (packageParams) {
 	return A2(
 		$elm$core$String$join,
@@ -10007,25 +10078,6 @@ var $author$project$Nrpc$Main$SvcCustomSubject$mtSimpleReply__Subject = function
 				$author$project$Nrpc$Main$SvcCustomSubject$subject(packageParams),
 				'mt_simple_reply'
 			]));
-};
-var $eriktim$elm_protocol_buffers$Protobuf$Encode$encode = function (encoder) {
-	switch (encoder.$) {
-		case 'Encoder':
-			var _v1 = encoder.b;
-			var encoder_ = _v1.b;
-			return $elm$bytes$Bytes$Encode$encode(encoder_);
-		case 'ListEncoder':
-			var encoders = encoder.a;
-			return $elm$bytes$Bytes$Encode$encode(
-				$elm$bytes$Bytes$Encode$sequence(
-					A2(
-						$elm$core$List$map,
-						A2($elm$core$Basics$composeL, $elm$bytes$Bytes$Encode$bytes, $eriktim$elm_protocol_buffers$Protobuf$Encode$encode),
-						encoders)));
-		default:
-			return $elm$bytes$Bytes$Encode$encode(
-				$elm$bytes$Bytes$Encode$sequence(_List_Nil));
-	}
 };
 var $author$project$Nrpc$Timeout = {$: 'Timeout'};
 var $author$project$Nrpc$DecodeError = function (a) {
@@ -10451,6 +10503,16 @@ var $author$project$Main$innerUpdate = F2(
 				} else {
 					return _Utils_Tuple3(model, $author$project$Nats$Effect$none, $elm$core$Platform$Cmd$none);
 				}
+			case 'OnNoRequestResponse':
+				var reply = msg.a;
+				return _Utils_Tuple3(
+					_Utils_update(
+						model,
+						{
+							svcCustomSubjectMtNoRequestResponse: $elm$core$Maybe$Just(reply)
+						}),
+					$author$project$Nats$Effect$none,
+					$elm$core$Platform$Cmd$none);
 			case 'CallSimpleReply':
 				var instance = msg.a;
 				return _Utils_Tuple3(
@@ -10481,7 +10543,7 @@ var $author$project$Main$innerUpdate = F2(
 						$author$project$Main$OnVoidReply,
 						{arg1: arg}),
 					$elm$core$Platform$Cmd$none);
-			default:
+			case 'OnVoidReply':
 				var reply = msg.a;
 				return _Utils_Tuple3(
 					_Utils_update(
@@ -10491,18 +10553,49 @@ var $author$project$Main$innerUpdate = F2(
 						}),
 					$author$project$Nats$Effect$none,
 					$elm$core$Platform$Cmd$none);
+			default:
+				return _Utils_Tuple3(
+					model,
+					A3(
+						$author$project$Nrpc$Main$SvcSubjectParams$mtNoReply,
+						{instance: 'default'},
+						{clientid: 'client1'},
+						{}),
+					$elm$core$Platform$Cmd$none);
 		}
 	});
+var $author$project$Main$OnNoRequestResponse = function (a) {
+	return {$: 'OnNoRequestResponse', a: a};
+};
 var $author$project$Main$OnSocketEvent = function (a) {
 	return {$: 'OnSocketEvent', a: a};
 };
+var $author$project$Nats$Internal$Sub$Sub = function (a) {
+	return {$: 'Sub', a: a};
+};
+var $author$project$Nats$Internal$Sub$sortPriority = function (sub) {
+	if (sub.$ === 'Connect') {
+		return 1;
+	} else {
+		return 2;
+	}
+};
+var $author$project$Nats$Internal$Sub$sort = $elm$core$List$sortBy($author$project$Nats$Internal$Sub$sortPriority);
+var $author$project$Nats$Internal$Sub$batch = A2(
+	$elm$core$Basics$composeR,
+	A2(
+		$elm$core$List$foldl,
+		function (_v0) {
+			var l = _v0.a;
+			return $elm$core$List$append(l);
+		},
+		_List_Nil),
+	A2($elm$core$Basics$composeR, $author$project$Nats$Internal$Sub$sort, $author$project$Nats$Internal$Sub$Sub));
+var $author$project$Nats$Sub$batch = $author$project$Nats$Internal$Sub$batch;
 var $author$project$Nats$Internal$Sub$Connect = F3(
 	function (a, b, c) {
 		return {$: 'Connect', a: a, b: b, c: c};
 	});
-var $author$project$Nats$Internal$Sub$Sub = function (a) {
-	return {$: 'Sub', a: a};
-};
 var $author$project$Nats$Internal$Sub$connect = F3(
 	function (options, socket_, onEvent) {
 		return $author$project$Nats$Internal$Sub$Sub(
@@ -10526,6 +10619,57 @@ var $author$project$Nats$Socket$connectOptions = F2(
 			version: version
 		};
 	});
+var $author$project$Nrpc$Main$SvcCustomSubject$mtNoRequest__Subject = function (packageParams) {
+	return A2(
+		$elm$core$String$join,
+		'.',
+		_List_fromArray(
+			[
+				$author$project$Nrpc$Main$SvcCustomSubject$subject(packageParams),
+				'mtnorequest'
+			]));
+};
+var $author$project$Nats$Internal$Sub$Subscribe = function (a) {
+	return {$: 'Subscribe', a: a};
+};
+var $author$project$Nats$Internal$Sub$subscribe = function (props) {
+	return $author$project$Nats$Internal$Sub$Sub(
+		_List_fromArray(
+			[
+				$author$project$Nats$Internal$Sub$Subscribe(props)
+			]));
+};
+var $author$project$Nats$groupSubscribe = F3(
+	function (subject, group, onMessage) {
+		return $author$project$Nats$Internal$Sub$subscribe(
+			{group: group, onMessage: onMessage, sid: $elm$core$Maybe$Nothing, subject: subject});
+	});
+var $author$project$Nats$subscribe = function (subject) {
+	return A2($author$project$Nats$groupSubscribe, subject, '');
+};
+var $author$project$Nrpc$subscribeToNoRequestMethod = F3(
+	function (subject, decoder, tagger) {
+		return A2(
+			$author$project$Nats$subscribe,
+			subject,
+			A2(
+				$elm$core$Basics$composeR,
+				function ($) {
+					return $.data;
+				},
+				A2(
+					$elm$core$Basics$composeR,
+					$author$project$Nrpc$decodeMessage(decoder),
+					tagger)));
+	});
+var $author$project$Nrpc$Main$SvcCustomSubject$mtNoRequest = F2(
+	function (packageParams, onResponse) {
+		return A3(
+			$author$project$Nrpc$subscribeToNoRequestMethod,
+			$author$project$Nrpc$Main$SvcCustomSubject$mtNoRequest__Subject(packageParams),
+			$author$project$Proto$Main$decodeSimpleStringReply,
+			onResponse);
+	});
 var $author$project$Nats$Socket$withUserPass = F3(
 	function (user, pass, options) {
 		return _Utils_update(
@@ -10536,15 +10680,23 @@ var $author$project$Nats$Socket$withUserPass = F3(
 			});
 	});
 var $author$project$Main$natsSubscriptions = function (model) {
-	return A3(
-		$author$project$Nats$connect,
-		A3(
-			$author$project$Nats$Socket$withUserPass,
-			'test',
-			'test',
-			A2($author$project$Nats$Socket$connectOptions, 'nrpc demo', '0.1')),
-		model.socket,
-		$author$project$Main$OnSocketEvent);
+	return $author$project$Nats$Sub$batch(
+		_List_fromArray(
+			[
+				A3(
+				$author$project$Nats$connect,
+				A3(
+					$author$project$Nats$Socket$withUserPass,
+					'test',
+					'test',
+					A2($author$project$Nats$Socket$connectOptions, 'nrpc demo', '0.1')),
+				model.socket,
+				$author$project$Main$OnSocketEvent),
+				A2(
+				$author$project$Nrpc$Main$SvcCustomSubject$mtNoRequest,
+				{instance: 'default'},
+				$author$project$Main$OnNoRequestResponse)
+			]));
 };
 var $author$project$Main$update = F2(
 	function (msg, model) {
@@ -10568,6 +10720,7 @@ var $author$project$Main$update = F2(
 				_List_fromArray(
 					[cmd, natsCmd])));
 	});
+var $author$project$Main$CallNoReply = {$: 'CallNoReply'};
 var $author$project$Main$CallSimpleReply = function (a) {
 	return {$: 'CallSimpleReply', a: a};
 };
@@ -10955,6 +11108,28 @@ var $author$project$Main$view = function (model) {
 							_List_fromArray(
 								[
 									$elm$html$Html$text('Subject Params')
+								])),
+							A2(
+							$elm$html$Html$ul,
+							_List_Nil,
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$li,
+									_List_Nil,
+									_List_fromArray(
+										[
+											A2(
+											$elm$html$Html$button,
+											_List_fromArray(
+												[
+													$elm$html$Html$Events$onClick($author$project$Main$CallNoReply)
+												]),
+											_List_fromArray(
+												[
+													$elm$html$Html$text('MtNoReply')
+												]))
+										]))
 								]))
 						]),
 						_List_fromArray(
@@ -10992,6 +11167,17 @@ var $author$project$Main$view = function (model) {
 												$elm$core$Maybe$withDefault,
 												'',
 												A2($elm$core$Maybe$map, $author$project$Main$printVoidReply, model.voidReply)))
+										])),
+									A2(
+									$elm$html$Html$li,
+									_List_Nil,
+									_List_fromArray(
+										[
+											$elm$html$Html$text(
+											'SvcCustomSubject.MtNoRequest: ' + A2(
+												$elm$core$Maybe$withDefault,
+												'',
+												A2($elm$core$Maybe$map, $author$project$Main$printSimpleStringReply, model.svcCustomSubjectMtNoRequestResponse)))
 										]))
 								]))
 						])

@@ -47,12 +47,10 @@ mtNoRequest__Subject packageParams =
     String.join "." [ subject packageParams, "mtnorequest" ]
 
 
-mtNoRequest packageParams onResponse input =
-    Nrpc.request
-        Proto.Nrpc.encodeNoRequest
-        Proto.Main.decodeSimpleStringReply
+mtNoRequest packageParams onResponse =
+    Nrpc.subscribeToNoRequestMethod
         (mtNoRequest__Subject packageParams)
-        input
+        Proto.Main.decodeSimpleStringReply
         onResponse
 
 
