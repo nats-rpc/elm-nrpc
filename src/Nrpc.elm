@@ -1,13 +1,13 @@
 module Nrpc exposing
     ( Error(..), request, requestVoidReply, requestNoReply
     , subscribeToNoRequestMethod
-      --, requestSubscribe, requestSubscribeVoidReply
+      , streamRequest, streamRequestWithID
     )
 
 {-| Utilities for Nrpc generated code
 
 @docs Error, request, requestVoidReply, requestNoReply
-@docs requestSubscribe, requestSubscribeVoidReply
+@docs streamRequest, streamRequestWithID
 
 -}
 
@@ -107,6 +107,47 @@ requestNoReply encode subject arg =
         (encode arg |> Protobuf.Encode.encode)
 
 
+streamRequest :
+    (arg -> Encoder)
+    -> Decoder result
+    -> String
+    -> arg
+    -> (Result Error result -> msg)
+    -> Nats.Effect Bytes msg
+streamRequest encode decoder subject =
+    streamRequestWithID encode decoder subject ""
+
+
+streamRequestWithID :
+    (arg -> Encoder)
+    -> Decoder result
+    -> String
+    -> String
+    -> arg
+    -> (Result Error result -> msg)
+    -> Nats.Effect Bytes msg
+streamRequestWithID encode decoder subject id arg onResponse =
+    Nats.customRequest
+        { marker = "stream/"++id
+        , subject = subject
+        , message = (encode arg |> Protobuf.Encode.encode)
+        , timeout = Nothing
+        , onTimeout = always (Err Timeout |> onResponse)
+        , onResponse =
+            (\m ->
+                if isKeepAliveMsg (m.data |> Debug.log "data") |> Debug.log "isKeepAlive" then
+                    ( Nothing, True )
+                else
+                    case handleResponse decoder (Ok m.data) of
+                        Err err  ->
+                            ( Err err |> onResponse |> Just, False )
+                        Ok result  ->
+                            ( Ok result |> onResponse |> Just, True )
+
+            )
+    }
+
+
 
 {- subscribe to a stream request
    requestSubscribe : String -> Maybe Json.Encode.Value -> Decoder b -> (Result Error b -> msg) -> Nats.Sub.Sub msg
@@ -138,16 +179,24 @@ subscribeToNoRequestMethod subject decoder tagger =
         (.data >> decodeMessage decoder >> tagger)
 
 
+hasLeadlingZero : Bytes -> Bool
+hasLeadlingZero =
+    Bytes.Decode.decode
+        (Bytes.Decode.signedInt8
+            |> Bytes.Decode.map ((==) 0)
+        )
+    >> Maybe.withDefault False
+
+isKeepAliveMsg : Bytes -> Bool
+isKeepAliveMsg bytes =
+    Bytes.width bytes == 1 && hasLeadlingZero bytes
+
+
 decodeMessage : Decoder a -> Bytes -> Result Error a
 decodeMessage decoder message =
     let
         isError =
-            message
-                |> Bytes.Decode.decode
-                    (Bytes.Decode.signedInt8
-                        |> Bytes.Decode.map ((==) 0)
-                    )
-                |> Maybe.withDefault False
+            hasLeadlingZero message
     in
     if isError then
         case

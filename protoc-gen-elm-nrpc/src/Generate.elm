@@ -664,7 +664,12 @@ generateMethodDeclaration pbTypes fOptions fAPI sOptions sAPI method =
                                 in
                                 case List.drop (List.length subjectArgs) args of
                                     [ rArg, iArg ] ->
-                                        Gen.Nrpc.call_.request
+                                        (if options.streamedReply then
+                                            Gen.Nrpc.call_.streamRequest
+                                        else
+                                            Gen.Nrpc.call_.request
+                                            )
+
                                             (Dict.get method.inputType pbTypes.encoders
                                                 |> Maybe.withDefault (Elm.fn ( "i", Just Type.bool ) (\_ -> Elm.bool False))
                                             )

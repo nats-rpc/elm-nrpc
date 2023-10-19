@@ -8,6 +8,7 @@
         "local": [
             "../src/",
             "../src/Nrpc.elm",
+            "../src/Nrpc.elm",
             "../src/Nrpc.elm"
         ]
     }

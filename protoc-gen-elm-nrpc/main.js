@@ -12391,6 +12391,129 @@ var $author$project$Gen$Nrpc$call_ = {
 				_List_fromArray(
 					[requestVoidReplyArg, requestVoidReplyArg0, requestVoidReplyArg1, requestVoidReplyArg2]));
 		}),
+	streamRequest: F5(
+		function (streamRequestArg, streamRequestArg0, streamRequestArg1, streamRequestArg2, streamRequestArg3) {
+			return A2(
+				$mdgriffith$elm_codegen$Elm$apply,
+				$mdgriffith$elm_codegen$Elm$value(
+					{
+						annotation: $elm$core$Maybe$Just(
+							A2(
+								$mdgriffith$elm_codegen$Elm$Annotation$function,
+								_List_fromArray(
+									[
+										A2(
+										$mdgriffith$elm_codegen$Elm$Annotation$function,
+										_List_fromArray(
+											[
+												$mdgriffith$elm_codegen$Elm$Annotation$var('arg')
+											]),
+										A3($mdgriffith$elm_codegen$Elm$Annotation$namedWith, _List_Nil, 'Encoder', _List_Nil)),
+										A3(
+										$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
+										_List_Nil,
+										'Decoder',
+										_List_fromArray(
+											[
+												$mdgriffith$elm_codegen$Elm$Annotation$var('result')
+											])),
+										$mdgriffith$elm_codegen$Elm$Annotation$string,
+										$mdgriffith$elm_codegen$Elm$Annotation$var('arg'),
+										A2(
+										$mdgriffith$elm_codegen$Elm$Annotation$function,
+										_List_fromArray(
+											[
+												A3(
+												$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
+												_List_Nil,
+												'Result',
+												_List_fromArray(
+													[
+														A3($mdgriffith$elm_codegen$Elm$Annotation$namedWith, _List_Nil, 'Error', _List_Nil),
+														$mdgriffith$elm_codegen$Elm$Annotation$var('result')
+													]))
+											]),
+										$mdgriffith$elm_codegen$Elm$Annotation$var('msg'))
+									]),
+								A3(
+									$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
+									_List_fromArray(
+										['Nats']),
+									'Effect',
+									_List_fromArray(
+										[
+											A3($mdgriffith$elm_codegen$Elm$Annotation$namedWith, _List_Nil, 'Bytes', _List_Nil),
+											$mdgriffith$elm_codegen$Elm$Annotation$var('msg')
+										])))),
+						importFrom: _List_fromArray(
+							['Nrpc']),
+						name: 'streamRequest'
+					}),
+				_List_fromArray(
+					[streamRequestArg, streamRequestArg0, streamRequestArg1, streamRequestArg2, streamRequestArg3]));
+		}),
+	streamRequestWithID: F6(
+		function (streamRequestWithIDArg, streamRequestWithIDArg0, streamRequestWithIDArg1, streamRequestWithIDArg2, streamRequestWithIDArg3, streamRequestWithIDArg4) {
+			return A2(
+				$mdgriffith$elm_codegen$Elm$apply,
+				$mdgriffith$elm_codegen$Elm$value(
+					{
+						annotation: $elm$core$Maybe$Just(
+							A2(
+								$mdgriffith$elm_codegen$Elm$Annotation$function,
+								_List_fromArray(
+									[
+										A2(
+										$mdgriffith$elm_codegen$Elm$Annotation$function,
+										_List_fromArray(
+											[
+												$mdgriffith$elm_codegen$Elm$Annotation$var('arg')
+											]),
+										A3($mdgriffith$elm_codegen$Elm$Annotation$namedWith, _List_Nil, 'Encoder', _List_Nil)),
+										A3(
+										$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
+										_List_Nil,
+										'Decoder',
+										_List_fromArray(
+											[
+												$mdgriffith$elm_codegen$Elm$Annotation$var('result')
+											])),
+										$mdgriffith$elm_codegen$Elm$Annotation$string,
+										$mdgriffith$elm_codegen$Elm$Annotation$string,
+										$mdgriffith$elm_codegen$Elm$Annotation$var('arg'),
+										A2(
+										$mdgriffith$elm_codegen$Elm$Annotation$function,
+										_List_fromArray(
+											[
+												A3(
+												$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
+												_List_Nil,
+												'Result',
+												_List_fromArray(
+													[
+														A3($mdgriffith$elm_codegen$Elm$Annotation$namedWith, _List_Nil, 'Error', _List_Nil),
+														$mdgriffith$elm_codegen$Elm$Annotation$var('result')
+													]))
+											]),
+										$mdgriffith$elm_codegen$Elm$Annotation$var('msg'))
+									]),
+								A3(
+									$mdgriffith$elm_codegen$Elm$Annotation$namedWith,
+									_List_fromArray(
+										['Nats']),
+									'Effect',
+									_List_fromArray(
+										[
+											A3($mdgriffith$elm_codegen$Elm$Annotation$namedWith, _List_Nil, 'Bytes', _List_Nil),
+											$mdgriffith$elm_codegen$Elm$Annotation$var('msg')
+										])))),
+						importFrom: _List_fromArray(
+							['Nrpc']),
+						name: 'streamRequestWithID'
+					}),
+				_List_fromArray(
+					[streamRequestWithIDArg, streamRequestWithIDArg0, streamRequestWithIDArg1, streamRequestWithIDArg2, streamRequestWithIDArg3, streamRequestWithIDArg4]));
+		}),
 	subscribeToNoRequestMethod: F3(
 		function (subscribeToNoRequestMethodArg, subscribeToNoRequestMethodArg0, subscribeToNoRequestMethodArg1) {
 			return A2(
@@ -13333,7 +13456,7 @@ var $author$project$Generate$generateMethodDeclaration = F6(
 									var _v5 = _v4.b;
 									var iArg = _v5.a;
 									return A5(
-										$author$project$Gen$Nrpc$call_.request,
+										options.streamedReply ? $author$project$Gen$Nrpc$call_.streamRequest : $author$project$Gen$Nrpc$call_.request,
 										A2(
 											$elm$core$Maybe$withDefault,
 											A2(

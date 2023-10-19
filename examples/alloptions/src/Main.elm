@@ -34,6 +34,7 @@ type alias Model =
     , simpleStringReply : Maybe (Result Nrpc.Error Proto.Main.SimpleStringReply)
     , voidReply : Maybe (Result Nrpc.Error Proto.Nrpc.Void)
     , svcCustomSubjectMtNoRequestResponse : Maybe (Result Nrpc.Error Proto.Main.SimpleStringReply)
+    , streamSimpleStringResponse : List (Result Nrpc.Error Proto.Main.SimpleStringReply)
     }
 
 
@@ -43,9 +44,11 @@ type Msg
     | CallSimpleReply String
     | CallVoidReply String
     | CallNoReply
+    | CallStreamReply String
     | OnSimpleReplyResponse (Result Nrpc.Error Proto.Main.SimpleStringReply)
     | OnNoRequestResponse (Result Nrpc.Error Proto.Main.SimpleStringReply)
     | OnVoidReply (Result Nrpc.Error Proto.Nrpc.Void)
+    | OnStreamSimpleStringResponse (Result Nrpc.Error Proto.Main.SimpleStringReply)
 
 
 natsConfig =
@@ -104,6 +107,7 @@ init { now } =
       , simpleStringReply = Nothing
       , voidReply = Nothing
       , svcCustomSubjectMtNoRequestResponse = Nothing
+      , streamSimpleStringResponse = []
       }
     , Cmd.none
     )
@@ -156,10 +160,24 @@ innerUpdate msg model =
             , Cmd.none
             )
 
+        OnStreamSimpleStringResponse reply ->
+            ( { model | streamSimpleStringResponse = reply :: model.streamSimpleStringResponse }
+            , Nats.Effect.none
+            , Cmd.none
+            )
+
         CallVoidReply arg ->
             ( model
             , Nrpc.Main.SvcCustomSubject.mtVoidReply { instance = "default" }
                 OnVoidReply
+                { arg1 = arg }
+            , Cmd.none
+            )
+
+        CallStreamReply arg ->
+            ( model
+            , Nrpc.Main.SvcCustomSubject.mtStreamedReply { instance = "default" }
+                OnStreamSimpleStringResponse
                 { arg1 = arg }
             , Cmd.none
             )
@@ -287,6 +305,9 @@ view model =
                         [ button [ onClick <| CallVoidReply "normal" ] [ Html.text "MtVoidReply normal" ]
                         , button [ onClick <| CallVoidReply "please fail" ] [ Html.text "MtVoidReply please fail" ]
                         ]
+                    , li []
+                        [ button [ onClick <| CallStreamReply "arg" ] [ Html.text "MtStreamedReply" ]
+                        ]
                     ]
               ]
             , [ Html.h4 [] [ Html.text "Subject Params" ]
@@ -323,6 +344,17 @@ view model =
                                         |> Maybe.map printSimpleStringReply
                                         |> Maybe.withDefault ""
                                    )
+                            )
+                        ]
+                    , li []
+                        [ text
+                            "SvcCustomSubject.MtStreamedReply: "
+                        , ul []
+                            (model.streamSimpleStringResponse
+                                |> List.map
+                                    (\r ->
+                                        li [] [ text <| printSimpleStringReply r ]
+                                    )
                             )
                         ]
                     ]

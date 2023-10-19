@@ -1,7 +1,7 @@
-module Gen.Nrpc exposing (annotation_, call_, caseOf_, make_, moduleName_, request, requestNoReply, requestVoidReply, subscribeToNoRequestMethod, values_)
+module Gen.Nrpc exposing (annotation_, call_, caseOf_, make_, moduleName_, request, requestNoReply, requestVoidReply, streamRequest, streamRequestWithID, subscribeToNoRequestMethod, values_)
 
 {-| 
-@docs moduleName_, subscribeToNoRequestMethod, requestNoReply, requestVoidReply, request, annotation_, make_, caseOf_, call_, values_
+@docs moduleName_, subscribeToNoRequestMethod, streamRequestWithID, streamRequest, requestNoReply, requestVoidReply, request, annotation_, make_, caseOf_, call_, values_
 -}
 
 
@@ -57,6 +57,122 @@ subscribeToNoRequestMethod subscribeToNoRequestMethodArg subscribeToNoRequestMet
         , Elm.functionReduced
             "subscribeToNoRequestMethodUnpack"
             subscribeToNoRequestMethodArg1
+        ]
+
+
+{-| streamRequestWithID: 
+    (arg -> Encoder)
+    -> Decoder result
+    -> String
+    -> String
+    -> arg
+    -> (Result Error result -> msg)
+    -> Nats.Effect Bytes msg
+-}
+streamRequestWithID :
+    (Elm.Expression -> Elm.Expression)
+    -> Elm.Expression
+    -> String
+    -> String
+    -> Elm.Expression
+    -> (Elm.Expression -> Elm.Expression)
+    -> Elm.Expression
+streamRequestWithID streamRequestWithIDArg streamRequestWithIDArg0 streamRequestWithIDArg1 streamRequestWithIDArg2 streamRequestWithIDArg3 streamRequestWithIDArg4 =
+    Elm.apply
+        (Elm.value
+            { importFrom = [ "Nrpc" ]
+            , name = "streamRequestWithID"
+            , annotation =
+                Just
+                    (Type.function
+                        [ Type.function
+                            [ Type.var "arg" ]
+                            (Type.namedWith [] "Encoder" [])
+                        , Type.namedWith [] "Decoder" [ Type.var "result" ]
+                        , Type.string
+                        , Type.string
+                        , Type.var "arg"
+                        , Type.function
+                            [ Type.namedWith
+                                []
+                                "Result"
+                                [ Type.namedWith [] "Error" []
+                                , Type.var "result"
+                                ]
+                            ]
+                            (Type.var "msg")
+                        ]
+                        (Type.namedWith
+                            [ "Nats" ]
+                            "Effect"
+                            [ Type.namedWith [] "Bytes" [], Type.var "msg" ]
+                        )
+                    )
+            }
+        )
+        [ Elm.functionReduced "streamRequestWithIDUnpack" streamRequestWithIDArg
+        , streamRequestWithIDArg0
+        , Elm.string streamRequestWithIDArg1
+        , Elm.string streamRequestWithIDArg2
+        , streamRequestWithIDArg3
+        , Elm.functionReduced
+            "streamRequestWithIDUnpack"
+            streamRequestWithIDArg4
+        ]
+
+
+{-| streamRequest: 
+    (arg -> Encoder)
+    -> Decoder result
+    -> String
+    -> arg
+    -> (Result Error result -> msg)
+    -> Nats.Effect Bytes msg
+-}
+streamRequest :
+    (Elm.Expression -> Elm.Expression)
+    -> Elm.Expression
+    -> String
+    -> Elm.Expression
+    -> (Elm.Expression -> Elm.Expression)
+    -> Elm.Expression
+streamRequest streamRequestArg streamRequestArg0 streamRequestArg1 streamRequestArg2 streamRequestArg3 =
+    Elm.apply
+        (Elm.value
+            { importFrom = [ "Nrpc" ]
+            , name = "streamRequest"
+            , annotation =
+                Just
+                    (Type.function
+                        [ Type.function
+                            [ Type.var "arg" ]
+                            (Type.namedWith [] "Encoder" [])
+                        , Type.namedWith [] "Decoder" [ Type.var "result" ]
+                        , Type.string
+                        , Type.var "arg"
+                        , Type.function
+                            [ Type.namedWith
+                                []
+                                "Result"
+                                [ Type.namedWith [] "Error" []
+                                , Type.var "result"
+                                ]
+                            ]
+                            (Type.var "msg")
+                        ]
+                        (Type.namedWith
+                            [ "Nats" ]
+                            "Effect"
+                            [ Type.namedWith [] "Bytes" [], Type.var "msg" ]
+                        )
+                    )
+            }
+        )
+        [ Elm.functionReduced "streamRequestUnpack" streamRequestArg
+        , streamRequestArg0
+        , Elm.string streamRequestArg1
+        , streamRequestArg2
+        , Elm.functionReduced "streamRequestUnpack" streamRequestArg3
         ]
 
 
@@ -324,6 +440,21 @@ caseOf_ =
 call_ :
     { subscribeToNoRequestMethod :
         Elm.Expression -> Elm.Expression -> Elm.Expression -> Elm.Expression
+    , streamRequestWithID :
+        Elm.Expression
+        -> Elm.Expression
+        -> Elm.Expression
+        -> Elm.Expression
+        -> Elm.Expression
+        -> Elm.Expression
+        -> Elm.Expression
+    , streamRequest :
+        Elm.Expression
+        -> Elm.Expression
+        -> Elm.Expression
+        -> Elm.Expression
+        -> Elm.Expression
+        -> Elm.Expression
     , requestNoReply :
         Elm.Expression -> Elm.Expression -> Elm.Expression -> Elm.Expression
     , requestVoidReply :
@@ -375,6 +506,96 @@ call_ =
                 [ subscribeToNoRequestMethodArg
                 , subscribeToNoRequestMethodArg0
                 , subscribeToNoRequestMethodArg1
+                ]
+    , streamRequestWithID =
+        \streamRequestWithIDArg streamRequestWithIDArg0 streamRequestWithIDArg1 streamRequestWithIDArg2 streamRequestWithIDArg3 streamRequestWithIDArg4 ->
+            Elm.apply
+                (Elm.value
+                    { importFrom = [ "Nrpc" ]
+                    , name = "streamRequestWithID"
+                    , annotation =
+                        Just
+                            (Type.function
+                                [ Type.function
+                                    [ Type.var "arg" ]
+                                    (Type.namedWith [] "Encoder" [])
+                                , Type.namedWith
+                                    []
+                                    "Decoder"
+                                    [ Type.var "result" ]
+                                , Type.string
+                                , Type.string
+                                , Type.var "arg"
+                                , Type.function
+                                    [ Type.namedWith
+                                        []
+                                        "Result"
+                                        [ Type.namedWith [] "Error" []
+                                        , Type.var "result"
+                                        ]
+                                    ]
+                                    (Type.var "msg")
+                                ]
+                                (Type.namedWith
+                                    [ "Nats" ]
+                                    "Effect"
+                                    [ Type.namedWith [] "Bytes" []
+                                    , Type.var "msg"
+                                    ]
+                                )
+                            )
+                    }
+                )
+                [ streamRequestWithIDArg
+                , streamRequestWithIDArg0
+                , streamRequestWithIDArg1
+                , streamRequestWithIDArg2
+                , streamRequestWithIDArg3
+                , streamRequestWithIDArg4
+                ]
+    , streamRequest =
+        \streamRequestArg streamRequestArg0 streamRequestArg1 streamRequestArg2 streamRequestArg3 ->
+            Elm.apply
+                (Elm.value
+                    { importFrom = [ "Nrpc" ]
+                    , name = "streamRequest"
+                    , annotation =
+                        Just
+                            (Type.function
+                                [ Type.function
+                                    [ Type.var "arg" ]
+                                    (Type.namedWith [] "Encoder" [])
+                                , Type.namedWith
+                                    []
+                                    "Decoder"
+                                    [ Type.var "result" ]
+                                , Type.string
+                                , Type.var "arg"
+                                , Type.function
+                                    [ Type.namedWith
+                                        []
+                                        "Result"
+                                        [ Type.namedWith [] "Error" []
+                                        , Type.var "result"
+                                        ]
+                                    ]
+                                    (Type.var "msg")
+                                ]
+                                (Type.namedWith
+                                    [ "Nats" ]
+                                    "Effect"
+                                    [ Type.namedWith [] "Bytes" []
+                                    , Type.var "msg"
+                                    ]
+                                )
+                            )
+                    }
+                )
+                [ streamRequestArg
+                , streamRequestArg0
+                , streamRequestArg1
+                , streamRequestArg2
+                , streamRequestArg3
                 ]
     , requestNoReply =
         \requestNoReplyArg requestNoReplyArg0 requestNoReplyArg1 ->
@@ -490,6 +711,8 @@ call_ =
 
 values_ :
     { subscribeToNoRequestMethod : Elm.Expression
+    , streamRequestWithID : Elm.Expression
+    , streamRequest : Elm.Expression
     , requestNoReply : Elm.Expression
     , requestVoidReply : Elm.Expression
     , request : Elm.Expression
@@ -515,6 +738,67 @@ values_ =
                         (Type.namedWith
                             [ "Nats" ]
                             "Sub"
+                            [ Type.namedWith [] "Bytes" [], Type.var "msg" ]
+                        )
+                    )
+            }
+    , streamRequestWithID =
+        Elm.value
+            { importFrom = [ "Nrpc" ]
+            , name = "streamRequestWithID"
+            , annotation =
+                Just
+                    (Type.function
+                        [ Type.function
+                            [ Type.var "arg" ]
+                            (Type.namedWith [] "Encoder" [])
+                        , Type.namedWith [] "Decoder" [ Type.var "result" ]
+                        , Type.string
+                        , Type.string
+                        , Type.var "arg"
+                        , Type.function
+                            [ Type.namedWith
+                                []
+                                "Result"
+                                [ Type.namedWith [] "Error" []
+                                , Type.var "result"
+                                ]
+                            ]
+                            (Type.var "msg")
+                        ]
+                        (Type.namedWith
+                            [ "Nats" ]
+                            "Effect"
+                            [ Type.namedWith [] "Bytes" [], Type.var "msg" ]
+                        )
+                    )
+            }
+    , streamRequest =
+        Elm.value
+            { importFrom = [ "Nrpc" ]
+            , name = "streamRequest"
+            , annotation =
+                Just
+                    (Type.function
+                        [ Type.function
+                            [ Type.var "arg" ]
+                            (Type.namedWith [] "Encoder" [])
+                        , Type.namedWith [] "Decoder" [ Type.var "result" ]
+                        , Type.string
+                        , Type.var "arg"
+                        , Type.function
+                            [ Type.namedWith
+                                []
+                                "Result"
+                                [ Type.namedWith [] "Error" []
+                                , Type.var "result"
+                                ]
+                            ]
+                            (Type.var "msg")
+                        ]
+                        (Type.namedWith
+                            [ "Nats" ]
+                            "Effect"
                             [ Type.namedWith [] "Bytes" [], Type.var "msg" ]
                         )
                     )

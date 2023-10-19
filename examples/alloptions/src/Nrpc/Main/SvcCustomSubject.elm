@@ -60,7 +60,7 @@ mtStreamedReply__Subject packageParams =
 
 
 mtStreamedReply packageParams onResponse input =
-    Nrpc.request
+    Nrpc.streamRequest
         Proto.Main.encodeStringArg
         Proto.Main.decodeSimpleStringReply
         (mtStreamedReply__Subject packageParams)
@@ -74,7 +74,7 @@ mtVoidReqStreamedReply__Subject packageParams =
 
 
 mtVoidReqStreamedReply packageParams onResponse input =
-    Nrpc.request
+    Nrpc.streamRequest
         Proto.Nrpc.encodeVoid
         Proto.Main.decodeSimpleStringReply
         (mtVoidReqStreamedReply__Subject packageParams)
