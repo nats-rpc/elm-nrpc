@@ -138,7 +138,7 @@ streamRequestWithID encode decoder subject id arg onResponse =
         , onTimeout = always (Err Timeout |> onResponse)
         , onResponse =
             (\m ->
-                if isKeepAliveMsg (m.data |> Debug.log "data") |> Debug.log "isKeepAlive" then
+                if isKeepAliveMsg m.data then
                     ( Nothing, True )
                 else
                     case handleResponse decoder (Ok m.data) of

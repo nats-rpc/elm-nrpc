@@ -33,7 +33,7 @@ type alias Model =
     , socket : Nats.Socket.Socket
     , simpleStringReply : Maybe (Result Nrpc.Error Proto.Main.SimpleStringReply)
     , voidReply : Maybe (Result Nrpc.Error Proto.Nrpc.Void)
-    , svcCustomSubjectMtNoRequestResponse : Maybe (Result Nrpc.Error Proto.Main.SimpleStringReply)
+    , svcCustomSubjectMtNoRequestResponse : List ( String, Result Nrpc.Error Proto.Main.SimpleStringReply )
     , streamSimpleStringResponse : List (Result Nrpc.Error Proto.Main.SimpleStringReply)
     , reqMarker : Maybe String
     }
@@ -48,8 +48,10 @@ type Msg
     | CallStreamReply String
     | CallVoidReqStreamReply
     | CancelVoidReqStreamReply
+    | CallMtWithSubjectParams String String
+    | CallMtStreamedReplyWithSubjectParams String String
     | OnSimpleReplyResponse (Result Nrpc.Error Proto.Main.SimpleStringReply)
-    | OnNoRequestResponse (Result Nrpc.Error Proto.Main.SimpleStringReply)
+    | OnNoRequestResponse String (Result Nrpc.Error Proto.Main.SimpleStringReply)
     | OnVoidReply (Result Nrpc.Error Proto.Nrpc.Void)
     | OnStreamSimpleStringResponse (Result Nrpc.Error Proto.Main.SimpleStringReply)
     | OnTime Time.Posix
@@ -110,7 +112,7 @@ init { now } =
                 |> Nats.Socket.withDebug True
       , simpleStringReply = Nothing
       , voidReply = Nothing
-      , svcCustomSubjectMtNoRequestResponse = Nothing
+      , svcCustomSubjectMtNoRequestResponse = []
       , streamSimpleStringResponse = []
       , reqMarker = Nothing
       }
@@ -151,8 +153,13 @@ innerUpdate msg model =
             , Cmd.none
             )
 
-        OnNoRequestResponse reply ->
-            ( { model | svcCustomSubjectMtNoRequestResponse = Just reply }
+        OnNoRequestResponse mt reply ->
+            ( { model
+                | svcCustomSubjectMtNoRequestResponse =
+                    ( mt, reply )
+                        :: model.svcCustomSubjectMtNoRequestResponse
+                        |> List.take 10
+              }
             , Nats.Effect.none
             , Cmd.none
             )
@@ -172,7 +179,12 @@ innerUpdate msg model =
             )
 
         OnStreamSimpleStringResponse reply ->
-            ( { model | streamSimpleStringResponse = reply :: model.streamSimpleStringResponse }
+            ( { model
+                | streamSimpleStringResponse =
+                    reply
+                        :: model.streamSimpleStringResponse
+                        |> List.take 10
+              }
             , Nats.Effect.none
             , Cmd.none
             )
@@ -210,6 +222,26 @@ innerUpdate msg model =
 
                 Nothing ->
                     Nats.Effect.none
+            , Cmd.none
+            )
+
+        CallMtWithSubjectParams arg1 arg2 ->
+            ( model
+            , Nrpc.Main.SvcSubjectParams.mtWithSubjectParams { instance = "default" }
+                { clientid = "client1" }
+                { mp1 = arg1, mp2 = arg2 }
+                OnSimpleReplyResponse
+                {}
+            , Cmd.none
+            )
+
+        CallMtStreamedReplyWithSubjectParams arg1 arg2 ->
+            ( model
+            , Nrpc.Main.SvcSubjectParams.mtStreamedReplyWithSubjectParams { instance = "default" }
+                { clientid = "client1" }
+                { mp1 = arg1, mp2 = arg2 }
+                OnStreamSimpleStringResponse
+                {}
             , Cmd.none
             )
 
@@ -251,7 +283,8 @@ natsSubscriptions model =
             )
             model.socket
             OnSocketEvent
-        , Nrpc.Main.SvcCustomSubject.mtNoRequest { instance = "default" } OnNoRequestResponse
+        , Nrpc.Main.SvcCustomSubject.mtNoRequest { instance = "default" } (OnNoRequestResponse "mtNoRequest")
+        , Nrpc.Main.SvcSubjectParams.mtNoRequestWParams { instance = "default" } { clientid = "me" } { mp1 = "mtvalue" } (OnNoRequestResponse "mtNoRequestWParams")
         ]
 
 
@@ -351,6 +384,15 @@ view model =
             , [ Html.h4 [] [ Html.text "Subject Params" ]
               , ul []
                     [ li []
+                        [ button [ onClick <| CallMtWithSubjectParams "p1" "p2" ] [ Html.text "mtWithSubjectParams" ]
+                        , button [ onClick <| CallMtWithSubjectParams "arg1" "arg2" ] [ Html.text "mtWithSubjectParams w error" ]
+                        ]
+                    , li []
+                        [ Html.text "MtStreamedReplyWithSubjectParams"
+                        , button [ onClick <| CallMtStreamedReplyWithSubjectParams "arg1" "arg2" ] [ Html.text "arg1 arg2" ]
+                        , button [ onClick <| CallMtStreamedReplyWithSubjectParams "m1" "m2" ] [ Html.text "m1 m2" ]
+                        ]
+                    , li []
                         [ button [ onClick <| CallNoReply ] [ Html.text "MtNoReply" ]
                         ]
                     ]
@@ -377,11 +419,13 @@ view model =
                         ]
                     , li []
                         [ text
-                            ("SvcCustomSubject.MtNoRequest: "
-                                ++ (model.svcCustomSubjectMtNoRequestResponse
-                                        |> Maybe.map printSimpleStringReply
-                                        |> Maybe.withDefault ""
-                                   )
+                            "SvcCustomSubject.MtNoRequest: "
+                        , ul []
+                            (model.svcCustomSubjectMtNoRequestResponse
+                                |> List.map
+                                    (\( mt, r ) ->
+                                        li [] [ text <| mt ++ ": " ++ printSimpleStringReply r ]
+                                    )
                             )
                         ]
                     , li []

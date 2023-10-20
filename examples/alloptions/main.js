@@ -11177,7 +11177,7 @@ var $author$project$Main$init = function (_v0) {
 				true,
 				A2($author$project$Nats$Socket$new, '0', 'ws://localhost:8087')),
 			streamSimpleStringResponse: _List_Nil,
-			svcCustomSubjectMtNoRequestResponse: $elm$core$Maybe$Nothing,
+			svcCustomSubjectMtNoRequestResponse: _List_Nil,
 			voidReply: $elm$core$Maybe$Nothing
 		},
 		$elm$core$Platform$Cmd$none);
@@ -13900,8 +13900,8 @@ var $author$project$Nats$Internal$SocketState$receive = F3(
 					return _Utils_Tuple2(
 						newSt,
 						_Utils_Tuple2(
-							_Utils_ap(msgs, opMsgs),
-							_Utils_ap(cmds, opCmds)));
+							_Utils_ap(opMsgs, msgs),
+							_Utils_ap(opCmds, cmds)));
 				}),
 			_Utils_Tuple2(
 				parseState,
@@ -15286,7 +15286,6 @@ var $author$project$Nats$customRequest = function (_v0) {
 var $author$project$Nrpc$isKeepAliveMsg = function (bytes) {
 	return ($elm$bytes$Bytes$width(bytes) === 1) && $author$project$Nrpc$hasLeadlingZero(bytes);
 };
-var $elm$core$Debug$log = _Debug_log;
 var $author$project$Nrpc$streamRequestWithID = F6(
 	function (encode, decoder, subject, id, arg, onResponse) {
 		return $author$project$Nats$customRequest(
@@ -15295,11 +15294,7 @@ var $author$project$Nrpc$streamRequestWithID = F6(
 				message: $eriktim$elm_protocol_buffers$Protobuf$Encode$encode(
 					encode(arg)),
 				onResponse: function (m) {
-					if (A2(
-						$elm$core$Debug$log,
-						'isKeepAlive',
-						$author$project$Nrpc$isKeepAliveMsg(
-							A2($elm$core$Debug$log, 'data', m.data)))) {
+					if ($author$project$Nrpc$isKeepAliveMsg(m.data)) {
 						return _Utils_Tuple2($elm$core$Maybe$Nothing, true);
 					} else {
 						var _v0 = A2(
@@ -15341,6 +15336,29 @@ var $author$project$Nrpc$Main$SvcCustomSubject$mtStreamedReply = F3(
 			$author$project$Proto$Main$encodeStringArg,
 			$author$project$Proto$Main$decodeSimpleStringReply,
 			$author$project$Nrpc$Main$SvcCustomSubject$mtStreamedReply__Subject(packageParams),
+			input,
+			onResponse);
+	});
+var $author$project$Nrpc$Main$SvcSubjectParams$mtStreamedReplyWithSubjectParams__Subject = F3(
+	function (packageParams, serviceParams, params) {
+		return A2(
+			$elm$core$String$join,
+			'.',
+			_List_fromArray(
+				[
+					A2($author$project$Nrpc$Main$SvcSubjectParams$subject, packageParams, serviceParams),
+					'mtstreamedreplywithsubjectparams',
+					params.mp1,
+					params.mp2
+				]));
+	});
+var $author$project$Nrpc$Main$SvcSubjectParams$mtStreamedReplyWithSubjectParams = F5(
+	function (packageParams, serviceParams, params, onResponse, input) {
+		return A5(
+			$author$project$Nrpc$streamRequest,
+			$author$project$Proto$Nrpc$encodeVoid,
+			$author$project$Proto$Main$decodeSimpleStringReply,
+			A3($author$project$Nrpc$Main$SvcSubjectParams$mtStreamedReplyWithSubjectParams__Subject, packageParams, serviceParams, params),
 			input,
 			onResponse);
 	});
@@ -15387,6 +15405,29 @@ var $author$project$Nrpc$Main$SvcCustomSubject$mtVoidReqStreamedReply = F3(
 			input,
 			onResponse);
 	});
+var $author$project$Nrpc$Main$SvcSubjectParams$mtWithSubjectParams__Subject = F3(
+	function (packageParams, serviceParams, params) {
+		return A2(
+			$elm$core$String$join,
+			'.',
+			_List_fromArray(
+				[
+					A2($author$project$Nrpc$Main$SvcSubjectParams$subject, packageParams, serviceParams),
+					'mtwithsubjectparams',
+					params.mp1,
+					params.mp2
+				]));
+	});
+var $author$project$Nrpc$Main$SvcSubjectParams$mtWithSubjectParams = F5(
+	function (packageParams, serviceParams, params, onResponse, input) {
+		return A5(
+			$author$project$Nrpc$request,
+			$author$project$Proto$Nrpc$encodeVoid,
+			$author$project$Proto$Main$decodeSimpleStringReply,
+			A3($author$project$Nrpc$Main$SvcSubjectParams$mtWithSubjectParams__Subject, packageParams, serviceParams, params),
+			input,
+			onResponse);
+	});
 var $author$project$Nats$Internal$Types$NoEffect = {$: 'NoEffect'};
 var $author$project$Nats$Effect$none = $author$project$Nats$Internal$Types$NoEffect;
 var $author$project$Nats$Effect$setRequestMarker = F2(
@@ -15406,6 +15447,132 @@ var $author$project$Nats$Effect$setRequestMarker = F2(
 var $author$project$Nrpc$setStreamRequestMarker = function (marker) {
 	return $author$project$Nats$Effect$setRequestMarker('stream/' + marker);
 };
+var $elm$core$List$takeReverse = F3(
+	function (n, list, kept) {
+		takeReverse:
+		while (true) {
+			if (n <= 0) {
+				return kept;
+			} else {
+				if (!list.b) {
+					return kept;
+				} else {
+					var x = list.a;
+					var xs = list.b;
+					var $temp$n = n - 1,
+						$temp$list = xs,
+						$temp$kept = A2($elm$core$List$cons, x, kept);
+					n = $temp$n;
+					list = $temp$list;
+					kept = $temp$kept;
+					continue takeReverse;
+				}
+			}
+		}
+	});
+var $elm$core$List$takeTailRec = F2(
+	function (n, list) {
+		return $elm$core$List$reverse(
+			A3($elm$core$List$takeReverse, n, list, _List_Nil));
+	});
+var $elm$core$List$takeFast = F3(
+	function (ctr, n, list) {
+		if (n <= 0) {
+			return _List_Nil;
+		} else {
+			var _v0 = _Utils_Tuple2(n, list);
+			_v0$1:
+			while (true) {
+				_v0$5:
+				while (true) {
+					if (!_v0.b.b) {
+						return list;
+					} else {
+						if (_v0.b.b.b) {
+							switch (_v0.a) {
+								case 1:
+									break _v0$1;
+								case 2:
+									var _v2 = _v0.b;
+									var x = _v2.a;
+									var _v3 = _v2.b;
+									var y = _v3.a;
+									return _List_fromArray(
+										[x, y]);
+								case 3:
+									if (_v0.b.b.b.b) {
+										var _v4 = _v0.b;
+										var x = _v4.a;
+										var _v5 = _v4.b;
+										var y = _v5.a;
+										var _v6 = _v5.b;
+										var z = _v6.a;
+										return _List_fromArray(
+											[x, y, z]);
+									} else {
+										break _v0$5;
+									}
+								default:
+									if (_v0.b.b.b.b && _v0.b.b.b.b.b) {
+										var _v7 = _v0.b;
+										var x = _v7.a;
+										var _v8 = _v7.b;
+										var y = _v8.a;
+										var _v9 = _v8.b;
+										var z = _v9.a;
+										var _v10 = _v9.b;
+										var w = _v10.a;
+										var tl = _v10.b;
+										return (ctr > 1000) ? A2(
+											$elm$core$List$cons,
+											x,
+											A2(
+												$elm$core$List$cons,
+												y,
+												A2(
+													$elm$core$List$cons,
+													z,
+													A2(
+														$elm$core$List$cons,
+														w,
+														A2($elm$core$List$takeTailRec, n - 4, tl))))) : A2(
+											$elm$core$List$cons,
+											x,
+											A2(
+												$elm$core$List$cons,
+												y,
+												A2(
+													$elm$core$List$cons,
+													z,
+													A2(
+														$elm$core$List$cons,
+														w,
+														A3($elm$core$List$takeFast, ctr + 1, n - 4, tl)))));
+									} else {
+										break _v0$5;
+									}
+							}
+						} else {
+							if (_v0.a === 1) {
+								break _v0$1;
+							} else {
+								break _v0$5;
+							}
+						}
+					}
+				}
+				return list;
+			}
+			var _v1 = _v0.b;
+			var x = _v1.a;
+			return _List_fromArray(
+				[x]);
+		}
+	});
+var $elm$core$List$take = F2(
+	function (n, list) {
+		return A3($elm$core$List$takeFast, 0, n, list);
+	});
 var $author$project$Nats$Internal$SocketState$OnAck = function (a) {
 	return {$: 'OnAck', a: a};
 };
@@ -15586,12 +15753,19 @@ var $author$project$Main$innerUpdate = F2(
 					return _Utils_Tuple3(model, $author$project$Nats$Effect$none, $elm$core$Platform$Cmd$none);
 				}
 			case 'OnNoRequestResponse':
-				var reply = msg.a;
+				var mt = msg.a;
+				var reply = msg.b;
 				return _Utils_Tuple3(
 					_Utils_update(
 						model,
 						{
-							svcCustomSubjectMtNoRequestResponse: $elm$core$Maybe$Just(reply)
+							svcCustomSubjectMtNoRequestResponse: A2(
+								$elm$core$List$take,
+								10,
+								A2(
+									$elm$core$List$cons,
+									_Utils_Tuple2(mt, reply),
+									model.svcCustomSubjectMtNoRequestResponse))
 						}),
 					$author$project$Nats$Effect$none,
 					$elm$core$Platform$Cmd$none);
@@ -15621,7 +15795,10 @@ var $author$project$Main$innerUpdate = F2(
 					_Utils_update(
 						model,
 						{
-							streamSimpleStringResponse: A2($elm$core$List$cons, reply, model.streamSimpleStringResponse)
+							streamSimpleStringResponse: A2(
+								$elm$core$List$take,
+								10,
+								A2($elm$core$List$cons, reply, model.streamSimpleStringResponse))
 						}),
 					$author$project$Nats$Effect$none,
 					$elm$core$Platform$Cmd$none);
@@ -15676,6 +15853,32 @@ var $author$project$Main$innerUpdate = F2(
 						}
 					}(),
 					$elm$core$Platform$Cmd$none);
+			case 'CallMtWithSubjectParams':
+				var arg1 = msg.a;
+				var arg2 = msg.b;
+				return _Utils_Tuple3(
+					model,
+					A5(
+						$author$project$Nrpc$Main$SvcSubjectParams$mtWithSubjectParams,
+						{instance: 'default'},
+						{clientid: 'client1'},
+						{mp1: arg1, mp2: arg2},
+						$author$project$Main$OnSimpleReplyResponse,
+						{}),
+					$elm$core$Platform$Cmd$none);
+			case 'CallMtStreamedReplyWithSubjectParams':
+				var arg1 = msg.a;
+				var arg2 = msg.b;
+				return _Utils_Tuple3(
+					model,
+					A5(
+						$author$project$Nrpc$Main$SvcSubjectParams$mtStreamedReplyWithSubjectParams,
+						{instance: 'default'},
+						{clientid: 'client1'},
+						{mp1: arg1, mp2: arg2},
+						$author$project$Main$OnStreamSimpleStringResponse,
+						{}),
+					$elm$core$Platform$Cmd$none);
 			case 'OnVoidReply':
 				var reply = msg.a;
 				return _Utils_Tuple3(
@@ -15697,9 +15900,10 @@ var $author$project$Main$innerUpdate = F2(
 					$elm$core$Platform$Cmd$none);
 		}
 	});
-var $author$project$Main$OnNoRequestResponse = function (a) {
-	return {$: 'OnNoRequestResponse', a: a};
-};
+var $author$project$Main$OnNoRequestResponse = F2(
+	function (a, b) {
+		return {$: 'OnNoRequestResponse', a: a, b: b};
+	});
 var $author$project$Main$OnSocketEvent = function (a) {
 	return {$: 'OnSocketEvent', a: a};
 };
@@ -15803,6 +16007,26 @@ var $author$project$Nrpc$Main$SvcCustomSubject$mtNoRequest = F2(
 			$author$project$Proto$Main$decodeSimpleStringReply,
 			onResponse);
 	});
+var $author$project$Nrpc$Main$SvcSubjectParams$mtNoRequestWParams__Subject = F3(
+	function (packageParams, serviceParams, params) {
+		return A2(
+			$elm$core$String$join,
+			'.',
+			_List_fromArray(
+				[
+					A2($author$project$Nrpc$Main$SvcSubjectParams$subject, packageParams, serviceParams),
+					'mtnorequestwparams',
+					params.mp1
+				]));
+	});
+var $author$project$Nrpc$Main$SvcSubjectParams$mtNoRequestWParams = F4(
+	function (packageParams, serviceParams, params, onResponse) {
+		return A3(
+			$author$project$Nrpc$subscribeToNoRequestMethod,
+			A3($author$project$Nrpc$Main$SvcSubjectParams$mtNoRequestWParams__Subject, packageParams, serviceParams, params),
+			$author$project$Proto$Main$decodeSimpleStringReply,
+			onResponse);
+	});
 var $author$project$Nats$Socket$withUserPass = F3(
 	function (user, pass, options) {
 		return _Utils_update(
@@ -15828,7 +16052,13 @@ var $author$project$Main$natsSubscriptions = function (model) {
 				A2(
 				$author$project$Nrpc$Main$SvcCustomSubject$mtNoRequest,
 				{instance: 'default'},
-				$author$project$Main$OnNoRequestResponse)
+				$author$project$Main$OnNoRequestResponse('mtNoRequest')),
+				A4(
+				$author$project$Nrpc$Main$SvcSubjectParams$mtNoRequestWParams,
+				{instance: 'default'},
+				{clientid: 'me'},
+				{mp1: 'mtvalue'},
+				$author$project$Main$OnNoRequestResponse('mtNoRequestWParams'))
 			]));
 };
 var $author$project$Main$update = F2(
@@ -15852,6 +16082,14 @@ var $author$project$Main$update = F2(
 			$elm$core$Platform$Cmd$batch(
 				_List_fromArray(
 					[cmd, natsCmd])));
+	});
+var $author$project$Main$CallMtStreamedReplyWithSubjectParams = F2(
+	function (a, b) {
+		return {$: 'CallMtStreamedReplyWithSubjectParams', a: a, b: b};
+	});
+var $author$project$Main$CallMtWithSubjectParams = F2(
+	function (a, b) {
+		return {$: 'CallMtWithSubjectParams', a: a, b: b};
 	});
 var $author$project$Main$CallNoReply = {$: 'CallNoReply'};
 var $author$project$Main$CallSimpleReply = function (a) {
@@ -16265,6 +16503,63 @@ var $author$project$Main$view = function (model) {
 											$elm$html$Html$button,
 											_List_fromArray(
 												[
+													$elm$html$Html$Events$onClick(
+													A2($author$project$Main$CallMtWithSubjectParams, 'p1', 'p2'))
+												]),
+											_List_fromArray(
+												[
+													$elm$html$Html$text('mtWithSubjectParams')
+												])),
+											A2(
+											$elm$html$Html$button,
+											_List_fromArray(
+												[
+													$elm$html$Html$Events$onClick(
+													A2($author$project$Main$CallMtWithSubjectParams, 'arg1', 'arg2'))
+												]),
+											_List_fromArray(
+												[
+													$elm$html$Html$text('mtWithSubjectParams w error')
+												]))
+										])),
+									A2(
+									$elm$html$Html$li,
+									_List_Nil,
+									_List_fromArray(
+										[
+											$elm$html$Html$text('MtStreamedReplyWithSubjectParams'),
+											A2(
+											$elm$html$Html$button,
+											_List_fromArray(
+												[
+													$elm$html$Html$Events$onClick(
+													A2($author$project$Main$CallMtStreamedReplyWithSubjectParams, 'arg1', 'arg2'))
+												]),
+											_List_fromArray(
+												[
+													$elm$html$Html$text('arg1 arg2')
+												])),
+											A2(
+											$elm$html$Html$button,
+											_List_fromArray(
+												[
+													$elm$html$Html$Events$onClick(
+													A2($author$project$Main$CallMtStreamedReplyWithSubjectParams, 'm1', 'm2'))
+												]),
+											_List_fromArray(
+												[
+													$elm$html$Html$text('m1 m2')
+												]))
+										])),
+									A2(
+									$elm$html$Html$li,
+									_List_Nil,
+									_List_fromArray(
+										[
+											A2(
+											$elm$html$Html$button,
+											_List_fromArray(
+												[
 													$elm$html$Html$Events$onClick($author$project$Main$CallNoReply)
 												]),
 											_List_fromArray(
@@ -16315,11 +16610,25 @@ var $author$project$Main$view = function (model) {
 									_List_Nil,
 									_List_fromArray(
 										[
-											$elm$html$Html$text(
-											'SvcCustomSubject.MtNoRequest: ' + A2(
-												$elm$core$Maybe$withDefault,
-												'',
-												A2($elm$core$Maybe$map, $author$project$Main$printSimpleStringReply, model.svcCustomSubjectMtNoRequestResponse)))
+											$elm$html$Html$text('SvcCustomSubject.MtNoRequest: '),
+											A2(
+											$elm$html$Html$ul,
+											_List_Nil,
+											A2(
+												$elm$core$List$map,
+												function (_v1) {
+													var mt = _v1.a;
+													var r = _v1.b;
+													return A2(
+														$elm$html$Html$li,
+														_List_Nil,
+														_List_fromArray(
+															[
+																$elm$html$Html$text(
+																mt + (': ' + $author$project$Main$printSimpleStringReply(r)))
+															]));
+												},
+												model.svcCustomSubjectMtNoRequestResponse))
 										])),
 									A2(
 									$elm$html$Html$li,
@@ -16360,7 +16669,7 @@ _Platform_export({'Main':{'init':$author$project$Main$main(
 			return $elm$json$Json$Decode$succeed(
 				{now: now});
 		},
-		A2($elm$json$Json$Decode$field, 'now', $elm$json$Json$Decode$int)))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Nats.Msg":{"args":["datatype","msg"],"type":"Nats.Internal.Types.Msg datatype msg"},"Proto.Main.Internals_.Proto__Main__SimpleStringReply":{"args":[],"type":"{ reply : String.String }"},"Proto.Nrpc.Internals_.Proto__Nrpc__Void":{"args":[],"type":"{}"},"Proto.Main.SimpleStringReply":{"args":[],"type":"Proto.Main.Internals_.Proto__Main__SimpleStringReply"},"Proto.Nrpc.Void":{"args":[],"type":"Proto.Nrpc.Internals_.Proto__Nrpc__Void"},"Nats.Internal.Ports.Ack":{"args":[],"type":"{ sid : String.String, ack : String.String }"},"Nats.Internal.Ports.Message":{"args":["datatype"],"type":"{ sid : String.String, ack : Maybe.Maybe String.String, message : datatype }"},"Nats.Protocol.ServerInfo":{"args":[],"type":"{ server_id : String.String, version : String.String, go : String.String, host : String.String, port_ : Basics.Int, auth_required : Basics.Bool, max_payload : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"NatsMsg":["Nats.Msg Bytes.Bytes Main.Msg"],"OnSocketEvent":["Nats.Events.SocketEvent"],"CallSimpleReply":["String.String"],"CallVoidReply":["String.String"],"CallNoReply":[],"CallStreamReply":["String.String"],"CallVoidReqStreamReply":[],"CancelVoidReqStreamReply":[],"OnSimpleReplyResponse":["Result.Result Nrpc.Error Proto.Main.SimpleStringReply"],"OnNoRequestResponse":["Result.Result Nrpc.Error Proto.Main.SimpleStringReply"],"OnVoidReply":["Result.Result Nrpc.Error Proto.Nrpc.Void"],"OnStreamSimpleStringResponse":["Result.Result Nrpc.Error Proto.Main.SimpleStringReply"],"OnTime":["Time.Posix"]}},"Bytes.Bytes":{"args":[],"tags":{"Bytes":[]}},"Nrpc.Error":{"args":[],"tags":{"Timeout":[],"DecodeError":["String.String"],"ClientError":["String.String"],"ServerError":["String.String"],"ServerTooBusy":["String.String"],"EOS":["Basics.Int"]}},"Nats.Internal.Types.Msg":{"args":["datatype","msg"],"tags":{"OnAck":["Nats.Internal.Ports.Ack"],"OnOpen":["String.String"],"OnClose":["String.String"],"OnError":["{ sid : String.String, message : String.String }"],"OnMessage":["Nats.Internal.Ports.Message datatype"],"OnTime":["Time.Posix"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"Nats.Events.SocketEvent":{"args":[],"tags":{"SocketOpen":["Nats.Protocol.ServerInfo"],"SocketClose":[],"SocketError":["String.String"]}},"String.String":{"args":[],"tags":{"String":[]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}}}}})}});var isBackend = false && typeof isLamdera !== 'undefined';
+		A2($elm$json$Json$Decode$field, 'now', $elm$json$Json$Decode$int)))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Nats.Msg":{"args":["datatype","msg"],"type":"Nats.Internal.Types.Msg datatype msg"},"Proto.Main.Internals_.Proto__Main__SimpleStringReply":{"args":[],"type":"{ reply : String.String }"},"Proto.Nrpc.Internals_.Proto__Nrpc__Void":{"args":[],"type":"{}"},"Proto.Main.SimpleStringReply":{"args":[],"type":"Proto.Main.Internals_.Proto__Main__SimpleStringReply"},"Proto.Nrpc.Void":{"args":[],"type":"Proto.Nrpc.Internals_.Proto__Nrpc__Void"},"Nats.Internal.Ports.Ack":{"args":[],"type":"{ sid : String.String, ack : String.String }"},"Nats.Internal.Ports.Message":{"args":["datatype"],"type":"{ sid : String.String, ack : Maybe.Maybe String.String, message : datatype }"},"Nats.Protocol.ServerInfo":{"args":[],"type":"{ server_id : String.String, version : String.String, go : String.String, host : String.String, port_ : Basics.Int, auth_required : Basics.Bool, max_payload : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"NatsMsg":["Nats.Msg Bytes.Bytes Main.Msg"],"OnSocketEvent":["Nats.Events.SocketEvent"],"CallSimpleReply":["String.String"],"CallVoidReply":["String.String"],"CallNoReply":[],"CallStreamReply":["String.String"],"CallVoidReqStreamReply":[],"CancelVoidReqStreamReply":[],"CallMtWithSubjectParams":["String.String","String.String"],"CallMtStreamedReplyWithSubjectParams":["String.String","String.String"],"OnSimpleReplyResponse":["Result.Result Nrpc.Error Proto.Main.SimpleStringReply"],"OnNoRequestResponse":["String.String","Result.Result Nrpc.Error Proto.Main.SimpleStringReply"],"OnVoidReply":["Result.Result Nrpc.Error Proto.Nrpc.Void"],"OnStreamSimpleStringResponse":["Result.Result Nrpc.Error Proto.Main.SimpleStringReply"],"OnTime":["Time.Posix"]}},"Bytes.Bytes":{"args":[],"tags":{"Bytes":[]}},"Nrpc.Error":{"args":[],"tags":{"Timeout":[],"DecodeError":["String.String"],"ClientError":["String.String"],"ServerError":["String.String"],"ServerTooBusy":["String.String"],"EOS":["Basics.Int"]}},"Nats.Internal.Types.Msg":{"args":["datatype","msg"],"tags":{"OnAck":["Nats.Internal.Ports.Ack"],"OnOpen":["String.String"],"OnClose":["String.String"],"OnError":["{ sid : String.String, message : String.String }"],"OnMessage":["Nats.Internal.Ports.Message datatype"],"OnTime":["Time.Posix"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"Nats.Events.SocketEvent":{"args":[],"tags":{"SocketOpen":["Nats.Protocol.ServerInfo"],"SocketClose":[],"SocketError":["String.String"]}},"String.String":{"args":[],"tags":{"String":[]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}}}}})}});var isBackend = false && typeof isLamdera !== 'undefined';
 
 function _Platform_initialize(flagDecoder, args, init, update, subscriptions, stepperBuilder)
   {
