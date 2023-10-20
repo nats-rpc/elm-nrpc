@@ -4955,6 +4955,52 @@ function _Browser_load(url)
 }
 
 
+
+function _Time_now(millisToPosix)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(millisToPosix(Date.now())));
+	});
+}
+
+var _Time_setInterval = F2(function(interval, task)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var id = setInterval(function() { _Scheduler_rawSpawn(task); }, interval);
+		return function() { clearInterval(id); };
+	});
+});
+
+function _Time_here()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(
+			A2($elm$time$Time$customZone, -(new Date().getTimezoneOffset()), _List_Nil)
+		));
+	});
+}
+
+
+function _Time_getZoneName()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		try
+		{
+			var name = $elm$time$Time$Name(Intl.DateTimeFormat().resolvedOptions().timeZone);
+		}
+		catch (e)
+		{
+			var name = $elm$time$Time$Offset(new Date().getTimezoneOffset());
+		}
+		callback(_Scheduler_succeed(name));
+	});
+}
+
+
 // BYTES
 
 function _Bytes_width(bytes)
@@ -5232,52 +5278,6 @@ var _Regex_splitAtMost = F3(function(n, re, str)
 });
 
 var _Regex_infinity = Infinity;
-
-
-
-function _Time_now(millisToPosix)
-{
-	return _Scheduler_binding(function(callback)
-	{
-		callback(_Scheduler_succeed(millisToPosix(Date.now())));
-	});
-}
-
-var _Time_setInterval = F2(function(interval, task)
-{
-	return _Scheduler_binding(function(callback)
-	{
-		var id = setInterval(function() { _Scheduler_rawSpawn(task); }, interval);
-		return function() { clearInterval(id); };
-	});
-});
-
-function _Time_here()
-{
-	return _Scheduler_binding(function(callback)
-	{
-		callback(_Scheduler_succeed(
-			A2($elm$time$Time$customZone, -(new Date().getTimezoneOffset()), _List_Nil)
-		));
-	});
-}
-
-
-function _Time_getZoneName()
-{
-	return _Scheduler_binding(function(callback)
-	{
-		try
-		{
-			var name = $elm$time$Time$Name(Intl.DateTimeFormat().resolvedOptions().timeZone);
-		}
-		catch (e)
-		{
-			var name = $elm$time$Time$Offset(new Date().getTimezoneOffset());
-		}
-		callback(_Scheduler_succeed(name));
-	});
-}
 var $elm$core$List$cons = _List_cons;
 var $elm$core$Elm$JsArray$foldr = _JsArray_foldr;
 var $elm$core$Array$foldr = F3(
@@ -11181,6 +11181,188 @@ var $author$project$Main$init = function (_v0) {
 		},
 		$elm$core$Platform$Cmd$none);
 };
+var $author$project$Main$OnTime = function (a) {
+	return {$: 'OnTime', a: a};
+};
+var $elm$core$Platform$Sub$batch = _Platform_batch;
+var $elm$time$Time$Every = F2(
+	function (a, b) {
+		return {$: 'Every', a: a, b: b};
+	});
+var $elm$time$Time$State = F2(
+	function (taggers, processes) {
+		return {processes: processes, taggers: taggers};
+	});
+var $elm$time$Time$init = $elm$core$Task$succeed(
+	A2($elm$time$Time$State, $elm$core$Dict$empty, $elm$core$Dict$empty));
+var $elm$time$Time$addMySub = F2(
+	function (_v0, state) {
+		var interval = _v0.a;
+		var tagger = _v0.b;
+		var _v1 = A2($elm$core$Dict$get, interval, state);
+		if (_v1.$ === 'Nothing') {
+			return A3(
+				$elm$core$Dict$insert,
+				interval,
+				_List_fromArray(
+					[tagger]),
+				state);
+		} else {
+			var taggers = _v1.a;
+			return A3(
+				$elm$core$Dict$insert,
+				interval,
+				A2($elm$core$List$cons, tagger, taggers),
+				state);
+		}
+	});
+var $elm$core$Process$kill = _Scheduler_kill;
+var $elm$core$Platform$sendToSelf = _Platform_sendToSelf;
+var $elm$time$Time$Name = function (a) {
+	return {$: 'Name', a: a};
+};
+var $elm$time$Time$Offset = function (a) {
+	return {$: 'Offset', a: a};
+};
+var $elm$time$Time$Zone = F2(
+	function (a, b) {
+		return {$: 'Zone', a: a, b: b};
+	});
+var $elm$time$Time$customZone = $elm$time$Time$Zone;
+var $elm$time$Time$setInterval = _Time_setInterval;
+var $elm$core$Process$spawn = _Scheduler_spawn;
+var $elm$time$Time$spawnHelp = F3(
+	function (router, intervals, processes) {
+		if (!intervals.b) {
+			return $elm$core$Task$succeed(processes);
+		} else {
+			var interval = intervals.a;
+			var rest = intervals.b;
+			var spawnTimer = $elm$core$Process$spawn(
+				A2(
+					$elm$time$Time$setInterval,
+					interval,
+					A2($elm$core$Platform$sendToSelf, router, interval)));
+			var spawnRest = function (id) {
+				return A3(
+					$elm$time$Time$spawnHelp,
+					router,
+					rest,
+					A3($elm$core$Dict$insert, interval, id, processes));
+			};
+			return A2($elm$core$Task$andThen, spawnRest, spawnTimer);
+		}
+	});
+var $elm$time$Time$onEffects = F3(
+	function (router, subs, _v0) {
+		var processes = _v0.processes;
+		var rightStep = F3(
+			function (_v6, id, _v7) {
+				var spawns = _v7.a;
+				var existing = _v7.b;
+				var kills = _v7.c;
+				return _Utils_Tuple3(
+					spawns,
+					existing,
+					A2(
+						$elm$core$Task$andThen,
+						function (_v5) {
+							return kills;
+						},
+						$elm$core$Process$kill(id)));
+			});
+		var newTaggers = A3($elm$core$List$foldl, $elm$time$Time$addMySub, $elm$core$Dict$empty, subs);
+		var leftStep = F3(
+			function (interval, taggers, _v4) {
+				var spawns = _v4.a;
+				var existing = _v4.b;
+				var kills = _v4.c;
+				return _Utils_Tuple3(
+					A2($elm$core$List$cons, interval, spawns),
+					existing,
+					kills);
+			});
+		var bothStep = F4(
+			function (interval, taggers, id, _v3) {
+				var spawns = _v3.a;
+				var existing = _v3.b;
+				var kills = _v3.c;
+				return _Utils_Tuple3(
+					spawns,
+					A3($elm$core$Dict$insert, interval, id, existing),
+					kills);
+			});
+		var _v1 = A6(
+			$elm$core$Dict$merge,
+			leftStep,
+			bothStep,
+			rightStep,
+			newTaggers,
+			processes,
+			_Utils_Tuple3(
+				_List_Nil,
+				$elm$core$Dict$empty,
+				$elm$core$Task$succeed(_Utils_Tuple0)));
+		var spawnList = _v1.a;
+		var existingDict = _v1.b;
+		var killTask = _v1.c;
+		return A2(
+			$elm$core$Task$andThen,
+			function (newProcesses) {
+				return $elm$core$Task$succeed(
+					A2($elm$time$Time$State, newTaggers, newProcesses));
+			},
+			A2(
+				$elm$core$Task$andThen,
+				function (_v2) {
+					return A3($elm$time$Time$spawnHelp, router, spawnList, existingDict);
+				},
+				killTask));
+	});
+var $elm$time$Time$now = _Time_now($elm$time$Time$millisToPosix);
+var $elm$time$Time$onSelfMsg = F3(
+	function (router, interval, state) {
+		var _v0 = A2($elm$core$Dict$get, interval, state.taggers);
+		if (_v0.$ === 'Nothing') {
+			return $elm$core$Task$succeed(state);
+		} else {
+			var taggers = _v0.a;
+			var tellTaggers = function (time) {
+				return $elm$core$Task$sequence(
+					A2(
+						$elm$core$List$map,
+						function (tagger) {
+							return A2(
+								$elm$core$Platform$sendToApp,
+								router,
+								tagger(time));
+						},
+						taggers));
+			};
+			return A2(
+				$elm$core$Task$andThen,
+				function (_v1) {
+					return $elm$core$Task$succeed(state);
+				},
+				A2($elm$core$Task$andThen, tellTaggers, $elm$time$Time$now));
+		}
+	});
+var $elm$time$Time$subMap = F2(
+	function (f, _v0) {
+		var interval = _v0.a;
+		var tagger = _v0.b;
+		return A2(
+			$elm$time$Time$Every,
+			interval,
+			A2($elm$core$Basics$composeL, f, tagger));
+	});
+_Platform_effectManagers['Time'] = _Platform_createManager($elm$time$Time$init, $elm$time$Time$onEffects, $elm$time$Time$onSelfMsg, 0, $elm$time$Time$subMap);
+var $elm$time$Time$subscription = _Platform_leaf('Time');
+var $elm$time$Time$every = F2(
+	function (interval, tagger) {
+		return $elm$time$Time$subscription(
+			A2($elm$time$Time$Every, interval, tagger));
+	});
 var $author$project$Main$NatsMsg = function (a) {
 	return {$: 'NatsMsg', a: a};
 };
@@ -12838,185 +13020,6 @@ var $author$project$Main$natsConfig = $author$project$NatsPorts$natsConfig($auth
 var $author$project$Nats$Internal$Types$OnTime = function (a) {
 	return {$: 'OnTime', a: a};
 };
-var $elm$core$Platform$Sub$batch = _Platform_batch;
-var $elm$time$Time$Every = F2(
-	function (a, b) {
-		return {$: 'Every', a: a, b: b};
-	});
-var $elm$time$Time$State = F2(
-	function (taggers, processes) {
-		return {processes: processes, taggers: taggers};
-	});
-var $elm$time$Time$init = $elm$core$Task$succeed(
-	A2($elm$time$Time$State, $elm$core$Dict$empty, $elm$core$Dict$empty));
-var $elm$time$Time$addMySub = F2(
-	function (_v0, state) {
-		var interval = _v0.a;
-		var tagger = _v0.b;
-		var _v1 = A2($elm$core$Dict$get, interval, state);
-		if (_v1.$ === 'Nothing') {
-			return A3(
-				$elm$core$Dict$insert,
-				interval,
-				_List_fromArray(
-					[tagger]),
-				state);
-		} else {
-			var taggers = _v1.a;
-			return A3(
-				$elm$core$Dict$insert,
-				interval,
-				A2($elm$core$List$cons, tagger, taggers),
-				state);
-		}
-	});
-var $elm$core$Process$kill = _Scheduler_kill;
-var $elm$core$Platform$sendToSelf = _Platform_sendToSelf;
-var $elm$time$Time$Name = function (a) {
-	return {$: 'Name', a: a};
-};
-var $elm$time$Time$Offset = function (a) {
-	return {$: 'Offset', a: a};
-};
-var $elm$time$Time$Zone = F2(
-	function (a, b) {
-		return {$: 'Zone', a: a, b: b};
-	});
-var $elm$time$Time$customZone = $elm$time$Time$Zone;
-var $elm$time$Time$setInterval = _Time_setInterval;
-var $elm$core$Process$spawn = _Scheduler_spawn;
-var $elm$time$Time$spawnHelp = F3(
-	function (router, intervals, processes) {
-		if (!intervals.b) {
-			return $elm$core$Task$succeed(processes);
-		} else {
-			var interval = intervals.a;
-			var rest = intervals.b;
-			var spawnTimer = $elm$core$Process$spawn(
-				A2(
-					$elm$time$Time$setInterval,
-					interval,
-					A2($elm$core$Platform$sendToSelf, router, interval)));
-			var spawnRest = function (id) {
-				return A3(
-					$elm$time$Time$spawnHelp,
-					router,
-					rest,
-					A3($elm$core$Dict$insert, interval, id, processes));
-			};
-			return A2($elm$core$Task$andThen, spawnRest, spawnTimer);
-		}
-	});
-var $elm$time$Time$onEffects = F3(
-	function (router, subs, _v0) {
-		var processes = _v0.processes;
-		var rightStep = F3(
-			function (_v6, id, _v7) {
-				var spawns = _v7.a;
-				var existing = _v7.b;
-				var kills = _v7.c;
-				return _Utils_Tuple3(
-					spawns,
-					existing,
-					A2(
-						$elm$core$Task$andThen,
-						function (_v5) {
-							return kills;
-						},
-						$elm$core$Process$kill(id)));
-			});
-		var newTaggers = A3($elm$core$List$foldl, $elm$time$Time$addMySub, $elm$core$Dict$empty, subs);
-		var leftStep = F3(
-			function (interval, taggers, _v4) {
-				var spawns = _v4.a;
-				var existing = _v4.b;
-				var kills = _v4.c;
-				return _Utils_Tuple3(
-					A2($elm$core$List$cons, interval, spawns),
-					existing,
-					kills);
-			});
-		var bothStep = F4(
-			function (interval, taggers, id, _v3) {
-				var spawns = _v3.a;
-				var existing = _v3.b;
-				var kills = _v3.c;
-				return _Utils_Tuple3(
-					spawns,
-					A3($elm$core$Dict$insert, interval, id, existing),
-					kills);
-			});
-		var _v1 = A6(
-			$elm$core$Dict$merge,
-			leftStep,
-			bothStep,
-			rightStep,
-			newTaggers,
-			processes,
-			_Utils_Tuple3(
-				_List_Nil,
-				$elm$core$Dict$empty,
-				$elm$core$Task$succeed(_Utils_Tuple0)));
-		var spawnList = _v1.a;
-		var existingDict = _v1.b;
-		var killTask = _v1.c;
-		return A2(
-			$elm$core$Task$andThen,
-			function (newProcesses) {
-				return $elm$core$Task$succeed(
-					A2($elm$time$Time$State, newTaggers, newProcesses));
-			},
-			A2(
-				$elm$core$Task$andThen,
-				function (_v2) {
-					return A3($elm$time$Time$spawnHelp, router, spawnList, existingDict);
-				},
-				killTask));
-	});
-var $elm$time$Time$now = _Time_now($elm$time$Time$millisToPosix);
-var $elm$time$Time$onSelfMsg = F3(
-	function (router, interval, state) {
-		var _v0 = A2($elm$core$Dict$get, interval, state.taggers);
-		if (_v0.$ === 'Nothing') {
-			return $elm$core$Task$succeed(state);
-		} else {
-			var taggers = _v0.a;
-			var tellTaggers = function (time) {
-				return $elm$core$Task$sequence(
-					A2(
-						$elm$core$List$map,
-						function (tagger) {
-							return A2(
-								$elm$core$Platform$sendToApp,
-								router,
-								tagger(time));
-						},
-						taggers));
-			};
-			return A2(
-				$elm$core$Task$andThen,
-				function (_v1) {
-					return $elm$core$Task$succeed(state);
-				},
-				A2($elm$core$Task$andThen, tellTaggers, $elm$time$Time$now));
-		}
-	});
-var $elm$time$Time$subMap = F2(
-	function (f, _v0) {
-		var interval = _v0.a;
-		var tagger = _v0.b;
-		return A2(
-			$elm$time$Time$Every,
-			interval,
-			A2($elm$core$Basics$composeL, f, tagger));
-	});
-_Platform_effectManagers['Time'] = _Platform_createManager($elm$time$Time$init, $elm$time$Time$onEffects, $elm$time$Time$onSelfMsg, 0, $elm$time$Time$subMap);
-var $elm$time$Time$subscription = _Platform_leaf('Time');
-var $elm$time$Time$every = F2(
-	function (interval, tagger) {
-		return $elm$time$Time$subscription(
-			A2($elm$time$Time$Every, interval, tagger));
-	});
 var $author$project$Nats$Internal$Types$OnAck = function (a) {
 	return {$: 'OnAck', a: a};
 };
@@ -13089,7 +13092,12 @@ var $author$project$Nats$subscriptions = F2(
 					])));
 	});
 var $author$project$Main$subscriptions = function (model) {
-	return A2($author$project$Nats$subscriptions, $author$project$Main$natsConfig, model.nats);
+	return $elm$core$Platform$Sub$batch(
+		_List_fromArray(
+			[
+				A2($author$project$Nats$subscriptions, $author$project$Main$natsConfig, model.nats),
+				A2($elm$time$Time$every, 1000, $author$project$Main$OnTime)
+			]));
 };
 var $author$project$Nats$Socket$Closed = {$: 'Closed'};
 var $author$project$Nats$Internal$SocketState$OnClosing = {$: 'OnClosing'};
@@ -13313,10 +13321,10 @@ var $author$project$Nats$Internal$SocketStateCollection$findByID = F2(
 				list));
 	});
 var $author$project$Nats$Socket$Undefined = {$: 'Undefined'};
-var $author$project$Nats$Internal$SocketState$init = F3(
-	function (options, onEvent, _v0) {
+var $author$project$Nats$Internal$SocketState$init = F4(
+	function (options, onEvent, _v0, time) {
 		var socket = _v0.a;
-		return {activeSubscriptions: _List_Nil, connectOptions: options, lastSubID: 0, nextSubscriptions: $elm$core$Dict$empty, onEvent: onEvent, parseState: $author$project$Nats$Protocol$initialParseState, serverInfo: $elm$core$Maybe$Nothing, socket: socket, status: $author$project$Nats$Socket$Undefined};
+		return {activeSubscriptions: _List_Nil, connectOptions: options, lastSubID: 0, nextSubscriptions: $elm$core$Dict$empty, onEvent: onEvent, parseState: $author$project$Nats$Protocol$initialParseState, serverInfo: $elm$core$Maybe$Nothing, socket: socket, status: $author$project$Nats$Socket$Undefined, time: time};
 	});
 var $author$project$Nats$Internal$SocketStateCollection$internalRemove = function (sid) {
 	return $elm$core$List$filter(
@@ -13429,7 +13437,7 @@ var $author$project$Nats$handleSubHelper = F3(
 								}(),
 								sockets: A2(
 									$author$project$Nats$Internal$SocketStateCollection$insert,
-									A3($author$project$Nats$Internal$SocketState$init, options, onEvent, socket),
+									A4($author$project$Nats$Internal$SocketState$init, options, onEvent, socket, state.time),
 									state.sockets)
 							})),
 					$elm$core$Maybe$Just(props.id),
@@ -13682,7 +13690,7 @@ var $author$project$Nats$Internal$SocketState$handleTimeouts = F2(
 		return _Utils_Tuple2(
 			_Utils_update(
 				state,
-				{nextSubscriptions: subs}),
+				{nextSubscriptions: subs, time: time}),
 			_Utils_Tuple2(msgList, _List_Nil));
 	});
 var $author$project$Nats$Internal$SocketState$parse = F3(
@@ -13714,6 +13722,9 @@ var $author$project$Nats$Protocol$CONNECT = function (a) {
 	return {$: 'CONNECT', a: a};
 };
 var $author$project$Nats$Socket$Connecting = {$: 'Connecting'};
+var $author$project$Nats$Internal$SocketState$Req = function (a) {
+	return {$: 'Req', a: a};
+};
 var $author$project$Nats$Internal$SocketState$operationToPortCommand = F3(
 	function (_v0, sid, op) {
 		var ncfg = _v0.a;
@@ -13817,14 +13828,35 @@ var $author$project$Nats$Internal$SocketState$receiveOperation = F3(
 					var msgList = _v2.a;
 					var _continue = _v2.b;
 					var nextState = function () {
+						var key = $author$project$Nats$Internal$SocketState$subscriptionKey(sub);
 						if (_continue) {
-							return state;
+							var _v4 = sub.subType;
+							if (_v4.$ === 'Req') {
+								var req = _v4.a;
+								return _Utils_update(
+									state,
+									{
+										nextSubscriptions: A3(
+											$elm$core$Dict$insert,
+											key,
+											_Utils_update(
+												sub,
+												{
+													subType: $author$project$Nats$Internal$SocketState$Req(
+														_Utils_update(
+															req,
+															{deadline: state.time + req.timeout}))
+												}),
+											state.nextSubscriptions)
+									});
+							} else {
+								return state;
+							}
 						} else {
 							var newSub = _Utils_update(
 								sub,
 								{subType: $author$project$Nats$Internal$SocketState$Closed});
 							var newKey = $author$project$Nats$Internal$SocketState$subscriptionKey(newSub);
-							var key = $author$project$Nats$Internal$SocketState$subscriptionKey(sub);
 							return _Utils_update(
 								state,
 								{
@@ -14070,9 +14102,6 @@ var $author$project$Nats$handleSub = F3(
 var $author$project$Nats$Protocol$PUB = function (a) {
 	return {$: 'PUB', a: a};
 };
-var $author$project$Nats$Internal$SocketState$Req = function (a) {
-	return {$: 'Req', a: a};
-};
 var $author$project$Nats$Internal$SocketState$addRequest = F3(
 	function (_v0, req, state) {
 		var cfg = _v0.a;
@@ -14080,7 +14109,7 @@ var $author$project$Nats$Internal$SocketState$addRequest = F3(
 			A4(
 				$author$project$Nats$Internal$SocketState$addSubscriptionHelper,
 				$author$project$Nats$Internal$SocketState$Req(
-					{deadline: req.deadline, marker: req.marker, onMessage: req.onResponse, onTimeout: req.onTimeout, subject: req.subject}),
+					{deadline: req.time + req.timeout, marker: req.marker, onMessage: req.onResponse, onTimeout: req.onTimeout, subject: req.subject, timeout: req.timeout}),
 				req.inbox,
 				'',
 				state),
@@ -14184,13 +14213,14 @@ var $author$project$Nats$toCmd = F3(
 								$author$project$Nats$Internal$SocketState$addRequest,
 								$author$project$Nats$Internal$Types$Config(cfg),
 								{
-									deadline: state.time + (1000 * A2($elm$core$Maybe$withDefault, 5, timeout)),
 									inbox: inbox,
 									marker: marker,
 									message: message,
 									onResponse: onResponse,
 									onTimeout: onTimeout,
-									subject: subject
+									subject: subject,
+									time: state.time,
+									timeout: A2($elm$core$Maybe$withDefault, 5, timeout) * 1000
 								},
 								socket);
 							var newSocket = _v6.a;
@@ -14286,6 +14316,58 @@ var $author$project$Main$OnStreamSimpleStringResponse = function (a) {
 var $author$project$Main$OnVoidReply = function (a) {
 	return {$: 'OnVoidReply', a: a};
 };
+var $author$project$Nats$activeRequests = function (_v0) {
+	var state = _v0.a;
+	return A2(
+		$elm$core$List$concatMap,
+		function (socket) {
+			return A2(
+				$elm$core$List$filterMap,
+				function (sub) {
+					var _v1 = sub.subType;
+					if (_v1.$ === 'Req') {
+						var marker = _v1.a.marker;
+						var subject = _v1.a.subject;
+						return $elm$core$Maybe$Just(
+							{id: sub.id, inbox: sub.subject, marker: marker, sid: socket.socket.id, subject: subject});
+					} else {
+						return $elm$core$Maybe$Nothing;
+					}
+				},
+				socket.activeSubscriptions);
+		},
+		$author$project$Nats$Internal$SocketStateCollection$toList(state.sockets));
+};
+var $author$project$Nats$Internal$Types$BatchEffect = function (a) {
+	return {$: 'BatchEffect', a: a};
+};
+var $author$project$Nats$Effect$batch = $author$project$Nats$Internal$Types$BatchEffect;
+var $author$project$Nrpc$emptyBytes = $elm$bytes$Bytes$Encode$encode(
+	$elm$bytes$Bytes$Encode$string(''));
+var $author$project$Nats$Internal$Types$Pub = function (a) {
+	return {$: 'Pub', a: a};
+};
+var $author$project$Nats$publish = F2(
+	function (subject, message) {
+		return $author$project$Nats$Internal$Types$Pub(
+			{message: message, replyTo: $elm$core$Maybe$Nothing, sid: $elm$core$Maybe$Nothing, subject: subject});
+	});
+var $author$project$Nrpc$heartbeat = A2(
+	$elm$core$Basics$composeR,
+	$author$project$Nats$activeRequests,
+	A2(
+		$elm$core$Basics$composeR,
+		$elm$core$List$filterMap(
+			function (r) {
+				return A2(
+					$elm$core$Maybe$andThen,
+					function (m) {
+						return A2($elm$core$String$startsWith, 'stream/', m) ? $elm$core$Maybe$Just(
+							A2($author$project$Nats$publish, r.inbox + '.heartbeat', $author$project$Nrpc$emptyBytes)) : $elm$core$Maybe$Nothing;
+					},
+					r.marker);
+			}),
+		$author$project$Nats$Effect$batch));
 var $eriktim$elm_protocol_buffers$Protobuf$Encode$Encoder = F2(
 	function (a, b) {
 		return {$: 'Encoder', a: a, b: b};
@@ -14516,14 +14598,6 @@ var $eriktim$elm_protocol_buffers$Protobuf$Encode$encode = function (encoder) {
 				$elm$bytes$Bytes$Encode$sequence(_List_Nil));
 	}
 };
-var $author$project$Nats$Internal$Types$Pub = function (a) {
-	return {$: 'Pub', a: a};
-};
-var $author$project$Nats$publish = F2(
-	function (subject, message) {
-		return $author$project$Nats$Internal$Types$Pub(
-			{message: message, replyTo: $elm$core$Maybe$Nothing, sid: $elm$core$Maybe$Nothing, subject: subject});
-	});
 var $author$project$Nrpc$requestNoReply = F3(
 	function (encode, subject, arg) {
 		return A2(
@@ -15369,6 +15443,11 @@ var $author$project$Main$innerUpdate = F2(
 						{nats: nats}),
 					$author$project$Nats$Effect$none,
 					cmd);
+			case 'OnTime':
+				return _Utils_Tuple3(
+					model,
+					$author$project$Nrpc$heartbeat(model.nats),
+					$elm$core$Platform$Cmd$none);
 			case 'OnSocketEvent':
 				if (msg.a.$ === 'SocketOpen') {
 					var info = msg.a.a;
@@ -16099,7 +16178,7 @@ _Platform_export({'Main':{'init':$author$project$Main$main(
 			return $elm$json$Json$Decode$succeed(
 				{now: now});
 		},
-		A2($elm$json$Json$Decode$field, 'now', $elm$json$Json$Decode$int)))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Nats.Msg":{"args":["datatype","msg"],"type":"Nats.Internal.Types.Msg datatype msg"},"Proto.Main.Internals_.Proto__Main__SimpleStringReply":{"args":[],"type":"{ reply : String.String }"},"Proto.Nrpc.Internals_.Proto__Nrpc__Void":{"args":[],"type":"{}"},"Proto.Main.SimpleStringReply":{"args":[],"type":"Proto.Main.Internals_.Proto__Main__SimpleStringReply"},"Proto.Nrpc.Void":{"args":[],"type":"Proto.Nrpc.Internals_.Proto__Nrpc__Void"},"Nats.Internal.Ports.Ack":{"args":[],"type":"{ sid : String.String, ack : String.String }"},"Nats.Internal.Ports.Message":{"args":["datatype"],"type":"{ sid : String.String, ack : Maybe.Maybe String.String, message : datatype }"},"Nats.Protocol.ServerInfo":{"args":[],"type":"{ server_id : String.String, version : String.String, go : String.String, host : String.String, port_ : Basics.Int, auth_required : Basics.Bool, max_payload : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"NatsMsg":["Nats.Msg Bytes.Bytes Main.Msg"],"OnSocketEvent":["Nats.Events.SocketEvent"],"CallSimpleReply":["String.String"],"CallVoidReply":["String.String"],"CallNoReply":[],"CallStreamReply":["String.String"],"OnSimpleReplyResponse":["Result.Result Nrpc.Error Proto.Main.SimpleStringReply"],"OnNoRequestResponse":["Result.Result Nrpc.Error Proto.Main.SimpleStringReply"],"OnVoidReply":["Result.Result Nrpc.Error Proto.Nrpc.Void"],"OnStreamSimpleStringResponse":["Result.Result Nrpc.Error Proto.Main.SimpleStringReply"]}},"Bytes.Bytes":{"args":[],"tags":{"Bytes":[]}},"Nrpc.Error":{"args":[],"tags":{"Timeout":[],"DecodeError":["String.String"],"ClientError":["String.String"],"ServerError":["String.String"],"ServerTooBusy":["String.String"],"EOS":["Basics.Int"]}},"Nats.Internal.Types.Msg":{"args":["datatype","msg"],"tags":{"OnAck":["Nats.Internal.Ports.Ack"],"OnOpen":["String.String"],"OnClose":["String.String"],"OnError":["{ sid : String.String, message : String.String }"],"OnMessage":["Nats.Internal.Ports.Message datatype"],"OnTime":["Time.Posix"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"Nats.Events.SocketEvent":{"args":[],"tags":{"SocketOpen":["Nats.Protocol.ServerInfo"],"SocketClose":[],"SocketError":["String.String"]}},"String.String":{"args":[],"tags":{"String":[]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}}}}})}});var isBackend = false && typeof isLamdera !== 'undefined';
+		A2($elm$json$Json$Decode$field, 'now', $elm$json$Json$Decode$int)))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Nats.Msg":{"args":["datatype","msg"],"type":"Nats.Internal.Types.Msg datatype msg"},"Proto.Main.Internals_.Proto__Main__SimpleStringReply":{"args":[],"type":"{ reply : String.String }"},"Proto.Nrpc.Internals_.Proto__Nrpc__Void":{"args":[],"type":"{}"},"Proto.Main.SimpleStringReply":{"args":[],"type":"Proto.Main.Internals_.Proto__Main__SimpleStringReply"},"Proto.Nrpc.Void":{"args":[],"type":"Proto.Nrpc.Internals_.Proto__Nrpc__Void"},"Nats.Internal.Ports.Ack":{"args":[],"type":"{ sid : String.String, ack : String.String }"},"Nats.Internal.Ports.Message":{"args":["datatype"],"type":"{ sid : String.String, ack : Maybe.Maybe String.String, message : datatype }"},"Nats.Protocol.ServerInfo":{"args":[],"type":"{ server_id : String.String, version : String.String, go : String.String, host : String.String, port_ : Basics.Int, auth_required : Basics.Bool, max_payload : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"NatsMsg":["Nats.Msg Bytes.Bytes Main.Msg"],"OnSocketEvent":["Nats.Events.SocketEvent"],"CallSimpleReply":["String.String"],"CallVoidReply":["String.String"],"CallNoReply":[],"CallStreamReply":["String.String"],"OnSimpleReplyResponse":["Result.Result Nrpc.Error Proto.Main.SimpleStringReply"],"OnNoRequestResponse":["Result.Result Nrpc.Error Proto.Main.SimpleStringReply"],"OnVoidReply":["Result.Result Nrpc.Error Proto.Nrpc.Void"],"OnStreamSimpleStringResponse":["Result.Result Nrpc.Error Proto.Main.SimpleStringReply"],"OnTime":["Time.Posix"]}},"Bytes.Bytes":{"args":[],"tags":{"Bytes":[]}},"Nrpc.Error":{"args":[],"tags":{"Timeout":[],"DecodeError":["String.String"],"ClientError":["String.String"],"ServerError":["String.String"],"ServerTooBusy":["String.String"],"EOS":["Basics.Int"]}},"Nats.Internal.Types.Msg":{"args":["datatype","msg"],"tags":{"OnAck":["Nats.Internal.Ports.Ack"],"OnOpen":["String.String"],"OnClose":["String.String"],"OnError":["{ sid : String.String, message : String.String }"],"OnMessage":["Nats.Internal.Ports.Message datatype"],"OnTime":["Time.Posix"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"Nats.Events.SocketEvent":{"args":[],"tags":{"SocketOpen":["Nats.Protocol.ServerInfo"],"SocketClose":[],"SocketError":["String.String"]}},"String.String":{"args":[],"tags":{"String":[]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}}}}})}});var isBackend = false && typeof isLamdera !== 'undefined';
 
 function _Platform_initialize(flagDecoder, args, init, update, subscriptions, stepperBuilder)
   {

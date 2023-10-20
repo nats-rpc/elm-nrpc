@@ -49,6 +49,7 @@ type Msg
     | OnNoRequestResponse (Result Nrpc.Error Proto.Main.SimpleStringReply)
     | OnVoidReply (Result Nrpc.Error Proto.Nrpc.Void)
     | OnStreamSimpleStringResponse (Result Nrpc.Error Proto.Main.SimpleStringReply)
+    | OnTime Time.Posix
 
 
 natsConfig =
@@ -124,6 +125,12 @@ innerUpdate msg model =
             ( { model | nats = nats }
             , Nats.Effect.none
             , cmd
+            )
+
+        OnTime _ ->
+            ( model
+            , Nrpc.heartbeat model.nats
+            , Cmd.none
             )
 
         OnSocketEvent (Nats.Events.SocketOpen info) ->
@@ -226,7 +233,10 @@ natsSubscriptions model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Nats.subscriptions natsConfig model.nats
+    Sub.batch
+        [ Nats.subscriptions natsConfig model.nats
+        , Time.every 1000 OnTime
+        ]
 
 
 panel : List (Html Msg) -> Html Msg

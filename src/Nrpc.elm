@@ -1,22 +1,26 @@
 module Nrpc exposing
     ( Error(..), request, requestVoidReply, requestNoReply
     , subscribeToNoRequestMethod
-      , streamRequest, streamRequestWithID
+    , streamRequest, streamRequestWithID
+    , heartbeat
     )
 
 {-| Utilities for Nrpc generated code
 
 @docs Error, request, requestVoidReply, requestNoReply
 @docs streamRequest, streamRequestWithID
+@docs hearbeat
 
 -}
 
 import Bytes exposing (Bytes)
 import Bytes.Decode
+import Bytes.Encode
 import Nats
 import Nats.Errors
 import Nats.Protocol
 import Nats.Sub
+import Nats.Effect
 import Proto.Nrpc exposing (decodeError)
 import Proto.Nrpc.Internals_
 import Protobuf.Decode exposing (Decoder)
@@ -179,6 +183,25 @@ subscribeToNoRequestMethod subject decoder tagger =
         (.data >> decodeMessage decoder >> tagger)
 
 
+{-| Send a heartbeat in all the streamed requests. Should be done every seconds or so -}
+heartbeat : Nats.State Bytes msg -> Nats.Effect Bytes msg
+heartbeat =
+    Nats.activeRequests 
+    >> List.filterMap
+        ( \r ->
+            r.marker
+            |> Maybe.andThen
+                (\m ->
+                    if String.startsWith "stream/" m then
+                        Just <| Nats.publish (r.inbox ++ ".heartbeat") emptyBytes
+                    else
+                        Nothing
+                    )
+                )
+    >> Nats.Effect.batch
+
+
+
 hasLeadlingZero : Bytes -> Bool
 hasLeadlingZero =
     Bytes.Decode.decode
@@ -241,3 +264,8 @@ fromProtoError err =
 
         Proto.Nrpc.Internals_.Proto__Nrpc__Error__TypeUnrecognized_ i ->
             DecodeError <| "invalid error type: " ++ String.fromInt i
+
+emptyBytes =
+    Bytes.Encode.string ""
+        |> Bytes.Encode.encode
+
