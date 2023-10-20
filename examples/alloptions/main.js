@@ -11169,6 +11169,7 @@ var $author$project$Main$init = function (_v0) {
 				$author$project$Nats$init,
 				$elm$random$Random$initialSeed(now),
 				$elm$time$Time$millisToPosix(now)),
+			reqMarker: $elm$core$Maybe$Nothing,
 			serverInfo: $elm$core$Maybe$Nothing,
 			simpleStringReply: $elm$core$Maybe$Nothing,
 			socket: A2(
@@ -14124,6 +14125,47 @@ var $author$project$Nats$Internal$SocketState$addRequest = F3(
 					})
 				]));
 	});
+var $author$project$Nats$Internal$SocketState$getSubscriptionByMarker = F2(
+	function (reqMarker, state) {
+		return $elm$core$List$head(
+			A2(
+				$elm$core$List$filter,
+				function (sub) {
+					var _v0 = sub.subType;
+					if (_v0.$ === 'Req') {
+						var marker = _v0.a.marker;
+						return _Utils_eq(
+							marker,
+							$elm$core$Maybe$Just(reqMarker));
+					} else {
+						return false;
+					}
+				},
+				state.activeSubscriptions));
+	});
+var $author$project$Nats$Internal$SocketState$cancelRequest = F2(
+	function (marker, state) {
+		var _v0 = A2($author$project$Nats$Internal$SocketState$getSubscriptionByMarker, marker, state);
+		if (_v0.$ === 'Just') {
+			var sub = _v0.a;
+			var newSub = _Utils_update(
+				sub,
+				{subType: $author$project$Nats$Internal$SocketState$Closed});
+			var newKey = $author$project$Nats$Internal$SocketState$subscriptionKey(newSub);
+			var key = $author$project$Nats$Internal$SocketState$subscriptionKey(sub);
+			return _Utils_update(
+				state,
+				{
+					nextSubscriptions: A3(
+						$elm$core$Dict$insert,
+						newKey,
+						newSub,
+						A2($elm$core$Dict$remove, key, state.nextSubscriptions))
+				});
+		} else {
+			return state;
+		}
+	});
 var $author$project$Nats$nextInbox = function (_v0) {
 	var state = _v0.a;
 	var _v1 = $author$project$Nats$Nuid$next(state.nuid);
@@ -14256,6 +14298,40 @@ var $author$project$Nats$toCmd = F3(
 						nextState,
 						A2($elm$core$Platform$Cmd$map, cfg.parentMsg, cmd));
 				}
+			case 'CancelRequest':
+				var marker = effect.a.marker;
+				var sid = effect.a.sid;
+				var _v8 = A2(
+					$elm$core$Maybe$withDefault,
+					A2($elm$core$Maybe$withDefault, '', state.defaultSocket),
+					sid);
+				if (_v8 === '') {
+					return _Utils_Tuple2(
+						oState,
+						A2(
+							$author$project$Nats$logError,
+							$author$project$Nats$Internal$Types$Config(cfg),
+							'cannot cancel request: Could not determine the sid'));
+				} else {
+					var s = _v8;
+					var _v9 = A4(
+						$author$project$Nats$updateSocket,
+						$author$project$Nats$Internal$Types$Config(cfg),
+						s,
+						function (socket) {
+							var newSocket = A2($author$project$Nats$Internal$SocketState$cancelRequest, marker, socket);
+							return _Utils_Tuple3(
+								$elm$core$Maybe$Just(newSocket),
+								_List_Nil,
+								$elm$core$Platform$Cmd$none);
+						},
+						oState);
+					var nextState = _v9.a;
+					var cmd = _v9.c;
+					return _Utils_Tuple2(
+						nextState,
+						A2($elm$core$Platform$Cmd$map, cfg.parentMsg, cmd));
+				}
 			case 'BatchEffect':
 				var list = effect.a;
 				return A2(
@@ -14264,16 +14340,16 @@ var $author$project$Nats$toCmd = F3(
 					A3(
 						$elm$core$List$foldl,
 						F2(
-							function (eff, _v8) {
-								var st = _v8.a;
-								var cmd = _v8.b;
-								var _v9 = A3(
+							function (eff, _v10) {
+								var st = _v10.a;
+								var cmd = _v10.b;
+								var _v11 = A3(
 									$author$project$Nats$toCmd,
 									$author$project$Nats$Internal$Types$Config(cfg),
 									eff,
 									st);
-								var newState = _v9.a;
-								var newCmd = _v9.b;
+								var newState = _v11.a;
+								var newCmd = _v11.b;
 								return _Utils_Tuple2(
 									newState,
 									A2($elm$core$List$cons, newCmd, cmd));
@@ -14315,6 +14391,16 @@ var $author$project$Main$OnStreamSimpleStringResponse = function (a) {
 };
 var $author$project$Main$OnVoidReply = function (a) {
 	return {$: 'OnVoidReply', a: a};
+};
+var $author$project$Nats$Internal$Types$CancelRequest = function (a) {
+	return {$: 'CancelRequest', a: a};
+};
+var $author$project$Nats$cancelRequest = function (marker) {
+	return $author$project$Nats$Internal$Types$CancelRequest(
+		{marker: marker, sid: $elm$core$Maybe$Nothing});
+};
+var $author$project$Nrpc$cancelStreamRequest = function (marker) {
+	return $author$project$Nats$cancelRequest('stream/' + marker);
 };
 var $author$project$Nats$activeRequests = function (_v0) {
 	var state = _v0.a;
@@ -15281,8 +15367,45 @@ var $author$project$Nrpc$Main$SvcCustomSubject$mtVoidReply = F3(
 			input,
 			onResponse);
 	});
+var $author$project$Nrpc$Main$SvcCustomSubject$mtVoidReqStreamedReply__Subject = function (packageParams) {
+	return A2(
+		$elm$core$String$join,
+		'.',
+		_List_fromArray(
+			[
+				$author$project$Nrpc$Main$SvcCustomSubject$subject(packageParams),
+				'mtvoidreqstreamedreply'
+			]));
+};
+var $author$project$Nrpc$Main$SvcCustomSubject$mtVoidReqStreamedReply = F3(
+	function (packageParams, onResponse, input) {
+		return A5(
+			$author$project$Nrpc$streamRequest,
+			$author$project$Proto$Nrpc$encodeVoid,
+			$author$project$Proto$Main$decodeSimpleStringReply,
+			$author$project$Nrpc$Main$SvcCustomSubject$mtVoidReqStreamedReply__Subject(packageParams),
+			input,
+			onResponse);
+	});
 var $author$project$Nats$Internal$Types$NoEffect = {$: 'NoEffect'};
 var $author$project$Nats$Effect$none = $author$project$Nats$Internal$Types$NoEffect;
+var $author$project$Nats$Effect$setRequestMarker = F2(
+	function (marker, effect) {
+		if (effect.$ === 'Request') {
+			var req = effect.a;
+			return $author$project$Nats$Internal$Types$Request(
+				_Utils_update(
+					req,
+					{
+						marker: $elm$core$Maybe$Just(marker)
+					}));
+		} else {
+			return effect;
+		}
+	});
+var $author$project$Nrpc$setStreamRequestMarker = function (marker) {
+	return $author$project$Nats$Effect$setRequestMarker('stream/' + marker);
+};
 var $author$project$Nats$Internal$SocketState$OnAck = function (a) {
 	return {$: 'OnAck', a: a};
 };
@@ -15522,6 +15645,37 @@ var $author$project$Main$innerUpdate = F2(
 						$author$project$Main$OnStreamSimpleStringResponse,
 						{arg1: arg}),
 					$elm$core$Platform$Cmd$none);
+			case 'CallVoidReqStreamReply':
+				return _Utils_Tuple3(
+					_Utils_update(
+						model,
+						{
+							reqMarker: $elm$core$Maybe$Just('1')
+						}),
+					A2(
+						$author$project$Nrpc$setStreamRequestMarker,
+						'1',
+						A3(
+							$author$project$Nrpc$Main$SvcCustomSubject$mtVoidReqStreamedReply,
+							{instance: 'default'},
+							$author$project$Main$OnStreamSimpleStringResponse,
+							{})),
+					$elm$core$Platform$Cmd$none);
+			case 'CancelVoidReqStreamReply':
+				return _Utils_Tuple3(
+					_Utils_update(
+						model,
+						{reqMarker: $elm$core$Maybe$Nothing}),
+					function () {
+						var _v2 = model.reqMarker;
+						if (_v2.$ === 'Just') {
+							var m = _v2.a;
+							return $author$project$Nrpc$cancelStreamRequest(m);
+						} else {
+							return $author$project$Nats$Effect$none;
+						}
+					}(),
+					$elm$core$Platform$Cmd$none);
 			case 'OnVoidReply':
 				var reply = msg.a;
 				return _Utils_Tuple3(
@@ -15709,6 +15863,8 @@ var $author$project$Main$CallStreamReply = function (a) {
 var $author$project$Main$CallVoidReply = function (a) {
 	return {$: 'CallVoidReply', a: a};
 };
+var $author$project$Main$CallVoidReqStreamReply = {$: 'CallVoidReqStreamReply'};
+var $author$project$Main$CancelVoidReqStreamReply = {$: 'CancelVoidReqStreamReply'};
 var $elm$html$Html$h4 = _VirtualDom_node('h4');
 var $author$project$Main$printError = function (e) {
 	switch (e.$) {
@@ -16057,6 +16213,32 @@ var $author$project$Main$view = function (model) {
 												[
 													$elm$html$Html$text('MtStreamedReply')
 												]))
+										])),
+									A2(
+									$elm$html$Html$li,
+									_List_Nil,
+									_List_fromArray(
+										[
+											A2(
+											$elm$html$Html$button,
+											_List_fromArray(
+												[
+													$elm$html$Html$Events$onClick($author$project$Main$CallVoidReqStreamReply)
+												]),
+											_List_fromArray(
+												[
+													$elm$html$Html$text('MtVoidReqStreamedReply')
+												])),
+											A2(
+											$elm$html$Html$button,
+											_List_fromArray(
+												[
+													$elm$html$Html$Events$onClick($author$project$Main$CancelVoidReqStreamReply)
+												]),
+											_List_fromArray(
+												[
+													$elm$html$Html$text('Cancel')
+												]))
 										]))
 								]))
 						]),
@@ -16178,7 +16360,7 @@ _Platform_export({'Main':{'init':$author$project$Main$main(
 			return $elm$json$Json$Decode$succeed(
 				{now: now});
 		},
-		A2($elm$json$Json$Decode$field, 'now', $elm$json$Json$Decode$int)))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Nats.Msg":{"args":["datatype","msg"],"type":"Nats.Internal.Types.Msg datatype msg"},"Proto.Main.Internals_.Proto__Main__SimpleStringReply":{"args":[],"type":"{ reply : String.String }"},"Proto.Nrpc.Internals_.Proto__Nrpc__Void":{"args":[],"type":"{}"},"Proto.Main.SimpleStringReply":{"args":[],"type":"Proto.Main.Internals_.Proto__Main__SimpleStringReply"},"Proto.Nrpc.Void":{"args":[],"type":"Proto.Nrpc.Internals_.Proto__Nrpc__Void"},"Nats.Internal.Ports.Ack":{"args":[],"type":"{ sid : String.String, ack : String.String }"},"Nats.Internal.Ports.Message":{"args":["datatype"],"type":"{ sid : String.String, ack : Maybe.Maybe String.String, message : datatype }"},"Nats.Protocol.ServerInfo":{"args":[],"type":"{ server_id : String.String, version : String.String, go : String.String, host : String.String, port_ : Basics.Int, auth_required : Basics.Bool, max_payload : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"NatsMsg":["Nats.Msg Bytes.Bytes Main.Msg"],"OnSocketEvent":["Nats.Events.SocketEvent"],"CallSimpleReply":["String.String"],"CallVoidReply":["String.String"],"CallNoReply":[],"CallStreamReply":["String.String"],"OnSimpleReplyResponse":["Result.Result Nrpc.Error Proto.Main.SimpleStringReply"],"OnNoRequestResponse":["Result.Result Nrpc.Error Proto.Main.SimpleStringReply"],"OnVoidReply":["Result.Result Nrpc.Error Proto.Nrpc.Void"],"OnStreamSimpleStringResponse":["Result.Result Nrpc.Error Proto.Main.SimpleStringReply"],"OnTime":["Time.Posix"]}},"Bytes.Bytes":{"args":[],"tags":{"Bytes":[]}},"Nrpc.Error":{"args":[],"tags":{"Timeout":[],"DecodeError":["String.String"],"ClientError":["String.String"],"ServerError":["String.String"],"ServerTooBusy":["String.String"],"EOS":["Basics.Int"]}},"Nats.Internal.Types.Msg":{"args":["datatype","msg"],"tags":{"OnAck":["Nats.Internal.Ports.Ack"],"OnOpen":["String.String"],"OnClose":["String.String"],"OnError":["{ sid : String.String, message : String.String }"],"OnMessage":["Nats.Internal.Ports.Message datatype"],"OnTime":["Time.Posix"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"Nats.Events.SocketEvent":{"args":[],"tags":{"SocketOpen":["Nats.Protocol.ServerInfo"],"SocketClose":[],"SocketError":["String.String"]}},"String.String":{"args":[],"tags":{"String":[]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}}}}})}});var isBackend = false && typeof isLamdera !== 'undefined';
+		A2($elm$json$Json$Decode$field, 'now', $elm$json$Json$Decode$int)))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Nats.Msg":{"args":["datatype","msg"],"type":"Nats.Internal.Types.Msg datatype msg"},"Proto.Main.Internals_.Proto__Main__SimpleStringReply":{"args":[],"type":"{ reply : String.String }"},"Proto.Nrpc.Internals_.Proto__Nrpc__Void":{"args":[],"type":"{}"},"Proto.Main.SimpleStringReply":{"args":[],"type":"Proto.Main.Internals_.Proto__Main__SimpleStringReply"},"Proto.Nrpc.Void":{"args":[],"type":"Proto.Nrpc.Internals_.Proto__Nrpc__Void"},"Nats.Internal.Ports.Ack":{"args":[],"type":"{ sid : String.String, ack : String.String }"},"Nats.Internal.Ports.Message":{"args":["datatype"],"type":"{ sid : String.String, ack : Maybe.Maybe String.String, message : datatype }"},"Nats.Protocol.ServerInfo":{"args":[],"type":"{ server_id : String.String, version : String.String, go : String.String, host : String.String, port_ : Basics.Int, auth_required : Basics.Bool, max_payload : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"NatsMsg":["Nats.Msg Bytes.Bytes Main.Msg"],"OnSocketEvent":["Nats.Events.SocketEvent"],"CallSimpleReply":["String.String"],"CallVoidReply":["String.String"],"CallNoReply":[],"CallStreamReply":["String.String"],"CallVoidReqStreamReply":[],"CancelVoidReqStreamReply":[],"OnSimpleReplyResponse":["Result.Result Nrpc.Error Proto.Main.SimpleStringReply"],"OnNoRequestResponse":["Result.Result Nrpc.Error Proto.Main.SimpleStringReply"],"OnVoidReply":["Result.Result Nrpc.Error Proto.Nrpc.Void"],"OnStreamSimpleStringResponse":["Result.Result Nrpc.Error Proto.Main.SimpleStringReply"],"OnTime":["Time.Posix"]}},"Bytes.Bytes":{"args":[],"tags":{"Bytes":[]}},"Nrpc.Error":{"args":[],"tags":{"Timeout":[],"DecodeError":["String.String"],"ClientError":["String.String"],"ServerError":["String.String"],"ServerTooBusy":["String.String"],"EOS":["Basics.Int"]}},"Nats.Internal.Types.Msg":{"args":["datatype","msg"],"tags":{"OnAck":["Nats.Internal.Ports.Ack"],"OnOpen":["String.String"],"OnClose":["String.String"],"OnError":["{ sid : String.String, message : String.String }"],"OnMessage":["Nats.Internal.Ports.Message datatype"],"OnTime":["Time.Posix"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"Nats.Events.SocketEvent":{"args":[],"tags":{"SocketOpen":["Nats.Protocol.ServerInfo"],"SocketClose":[],"SocketError":["String.String"]}},"String.String":{"args":[],"tags":{"String":[]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}}}}})}});var isBackend = false && typeof isLamdera !== 'undefined';
 
 function _Platform_initialize(flagDecoder, args, init, update, subscriptions, stepperBuilder)
   {

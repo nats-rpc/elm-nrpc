@@ -35,6 +35,7 @@ type alias Model =
     , voidReply : Maybe (Result Nrpc.Error Proto.Nrpc.Void)
     , svcCustomSubjectMtNoRequestResponse : Maybe (Result Nrpc.Error Proto.Main.SimpleStringReply)
     , streamSimpleStringResponse : List (Result Nrpc.Error Proto.Main.SimpleStringReply)
+    , reqMarker : Maybe String
     }
 
 
@@ -45,6 +46,8 @@ type Msg
     | CallVoidReply String
     | CallNoReply
     | CallStreamReply String
+    | CallVoidReqStreamReply
+    | CancelVoidReqStreamReply
     | OnSimpleReplyResponse (Result Nrpc.Error Proto.Main.SimpleStringReply)
     | OnNoRequestResponse (Result Nrpc.Error Proto.Main.SimpleStringReply)
     | OnVoidReply (Result Nrpc.Error Proto.Nrpc.Void)
@@ -109,6 +112,7 @@ init { now } =
       , voidReply = Nothing
       , svcCustomSubjectMtNoRequestResponse = Nothing
       , streamSimpleStringResponse = []
+      , reqMarker = Nothing
       }
     , Cmd.none
     )
@@ -186,6 +190,26 @@ innerUpdate msg model =
             , Nrpc.Main.SvcCustomSubject.mtStreamedReply { instance = "default" }
                 OnStreamSimpleStringResponse
                 { arg1 = arg }
+            , Cmd.none
+            )
+
+        CallVoidReqStreamReply ->
+            ( { model | reqMarker = Just "1" }
+            , Nrpc.Main.SvcCustomSubject.mtVoidReqStreamedReply { instance = "default" }
+                OnStreamSimpleStringResponse
+                {}
+                |> Nrpc.setStreamRequestMarker "1"
+            , Cmd.none
+            )
+
+        CancelVoidReqStreamReply ->
+            ( { model | reqMarker = Nothing }
+            , case model.reqMarker of
+                Just m ->
+                    Nrpc.cancelStreamRequest m
+
+                Nothing ->
+                    Nats.Effect.none
             , Cmd.none
             )
 
@@ -317,6 +341,10 @@ view model =
                         ]
                     , li []
                         [ button [ onClick <| CallStreamReply "arg" ] [ Html.text "MtStreamedReply" ]
+                        ]
+                    , li []
+                        [ button [ onClick <| CallVoidReqStreamReply ] [ Html.text "MtVoidReqStreamedReply" ]
+                        , button [ onClick <| CancelVoidReqStreamReply ] [ Html.text "Cancel" ]
                         ]
                     ]
               ]

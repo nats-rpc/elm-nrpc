@@ -2,14 +2,13 @@ module Nrpc exposing
     ( Error(..), request, requestVoidReply, requestNoReply
     , subscribeToNoRequestMethod
     , streamRequest, streamRequestWithID
-    , heartbeat
+    , heartbeat, cancelStreamRequest, setStreamRequestMarker
     )
 
 {-| Utilities for Nrpc generated code
 
 @docs Error, request, requestVoidReply, requestNoReply
-@docs streamRequest, streamRequestWithID
-@docs hearbeat
+@docs streamRequest, streamRequestWithID, cancelStreamRequest, heartbeat, setStreamRequestMarker
 
 -}
 
@@ -269,3 +268,14 @@ emptyBytes =
     Bytes.Encode.string ""
         |> Bytes.Encode.encode
 
+
+cancelStreamRequest : String -> Nats.Effect datatype msg 
+cancelStreamRequest marker =
+    -- TODO we should also send a heartbeat with 'last' set to 'true'
+    -- it will require knowing the request inbox
+    Nats.cancelRequest ("stream/" ++ marker)
+
+
+setStreamRequestMarker : String -> Nats.Effect datatype msg -> Nats.Effect datatype msg
+setStreamRequestMarker marker =
+    Nats.Effect.setRequestMarker ("stream/"++marker)
