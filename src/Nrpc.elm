@@ -1,8 +1,7 @@
 module Nrpc exposing
     ( Error(..), request, requestVoidReply, requestNoReply
+    , streamRequest, streamRequestWithID, cancelStreamRequest, heartbeat, setStreamRequestMarker
     , subscribeToNoRequestMethod
-    , streamRequest, streamRequestWithID
-    , heartbeat, cancelStreamRequest, setStreamRequestMarker
     )
 
 {-| Utilities for Nrpc generated code
@@ -16,10 +15,10 @@ import Bytes exposing (Bytes)
 import Bytes.Decode
 import Bytes.Encode
 import Nats
+import Nats.Effect
 import Nats.Errors
 import Nats.Protocol
 import Nats.Sub
-import Nats.Effect
 import Proto.Nrpc exposing (decodeError)
 import Proto.Nrpc.Internals_
 import Protobuf.Decode exposing (Decoder)
@@ -83,7 +82,8 @@ request encode decoder subject arg onResponse =
     Nats.request subject
         (encode arg |> Protobuf.Encode.encode)
         (handleResponse decoder
-            >> onResponse)
+            >> onResponse
+        )
 
 
 {-| subsribe to a stream request with void replies
@@ -131,24 +131,25 @@ streamRequestWithID :
     -> Nats.Effect Bytes msg
 streamRequestWithID encode decoder subject id arg onResponse =
     Nats.customRequest
-        { marker = "stream/"++id
+        { marker = "stream/" ++ id
         , subject = subject
-        , message = (encode arg |> Protobuf.Encode.encode)
+        , replyTo = Nothing
+        , message = encode arg |> Protobuf.Encode.encode
         , timeout = Nothing
         , onTimeout = always (Err Timeout |> onResponse)
         , onResponse =
-            (\m ->
+            \m ->
                 if isKeepAliveMsg m.data then
                     ( Nothing, True )
+
                 else
                     case handleResponse decoder (Ok m.data) of
-                        Err err  ->
+                        Err err ->
                             ( Err err |> onResponse |> Just, False )
-                        Ok result  ->
-                            ( Ok result |> onResponse |> Just, True )
 
-            )
-    }
+                        Ok result ->
+                            ( Ok result |> onResponse |> Just, True )
+        }
 
 
 
@@ -182,23 +183,24 @@ subscribeToNoRequestMethod subject decoder tagger =
         (.data >> decodeMessage decoder >> tagger)
 
 
-{-| Send a heartbeat in all the streamed requests. Should be done every seconds or so -}
+{-| Send a heartbeat in all the streamed requests. Should be done every seconds or so
+-}
 heartbeat : Nats.State Bytes msg -> Nats.Effect Bytes msg
 heartbeat =
-    Nats.activeRequests 
-    >> List.filterMap
-        ( \r ->
-            r.marker
-            |> Maybe.andThen
-                (\m ->
-                    if String.startsWith "stream/" m then
-                        Just <| Nats.publish (r.inbox ++ ".heartbeat") emptyBytes
-                    else
-                        Nothing
-                    )
-                )
-    >> Nats.Effect.batch
+    Nats.activeRequests
+        >> List.filterMap
+            (\r ->
+                r.marker
+                    |> Maybe.andThen
+                        (\m ->
+                            if String.startsWith "stream/" m then
+                                Just <| Nats.publish (r.inbox ++ ".heartbeat") emptyBytes
 
+                            else
+                                Nothing
+                        )
+            )
+        >> Nats.Effect.batch
 
 
 hasLeadlingZero : Bytes -> Bool
@@ -207,7 +209,8 @@ hasLeadlingZero =
         (Bytes.Decode.signedInt8
             |> Bytes.Decode.map ((==) 0)
         )
-    >> Maybe.withDefault False
+        >> Maybe.withDefault False
+
 
 isKeepAliveMsg : Bytes -> Bool
 isKeepAliveMsg bytes =
@@ -224,18 +227,19 @@ decodeMessage decoder message =
         case
             message
                 |> Bytes.Decode.decode
-                    ( 
-                        Bytes.Decode.signedInt8
-                        |> Bytes.Decode.andThen (\_ ->
-                         Bytes.Decode.bytes <| Bytes.width message - 1
+                    (Bytes.Decode.signedInt8
+                        |> Bytes.Decode.andThen
+                            (\_ ->
+                                Bytes.Decode.bytes <| Bytes.width message - 1
                             )
                     )
-                |> Maybe.andThen ( Protobuf.Decode.decode decodeError)  of
-                        Just err ->
-                            Err <| fromProtoError err
+                |> Maybe.andThen (Protobuf.Decode.decode decodeError)
+        of
+            Just err ->
+                Err <| fromProtoError err
 
-                        Nothing ->
-                            Err <| DecodeError "could not decode the error"
+            Nothing ->
+                Err <| DecodeError "could not decode the error"
 
     else
         case Protobuf.Decode.decode decoder message of
@@ -264,12 +268,13 @@ fromProtoError err =
         Proto.Nrpc.Internals_.Proto__Nrpc__Error__TypeUnrecognized_ i ->
             DecodeError <| "invalid error type: " ++ String.fromInt i
 
+
 emptyBytes =
     Bytes.Encode.string ""
         |> Bytes.Encode.encode
 
 
-cancelStreamRequest : String -> Nats.Effect datatype msg 
+cancelStreamRequest : String -> Nats.Effect datatype msg
 cancelStreamRequest marker =
     -- TODO we should also send a heartbeat with 'last' set to 'true'
     -- it will require knowing the request inbox
@@ -278,4 +283,4 @@ cancelStreamRequest marker =
 
 setStreamRequestMarker : String -> Nats.Effect datatype msg -> Nats.Effect datatype msg
 setStreamRequestMarker marker =
-    Nats.Effect.setRequestMarker ("stream/"++marker)
+    Nats.Effect.setRequestMarker ("stream/" ++ marker)
