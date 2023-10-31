@@ -1,13 +1,13 @@
 module Nrpc exposing
     ( Error(..), request, requestVoidReply, requestNoReply
-    , streamRequest, streamRequestWithID, cancelStreamRequest, heartbeat, setStreamRequestMarker
+    , streamRequest, streamRequestWithID, cancelStreamRequest, heartbeat, setStreamRequestMarker, onRequestCanceled
     , subscribeToNoRequestMethod
     )
 
 {-| Utilities for Nrpc generated code
 
 @docs Error, request, requestVoidReply, requestNoReply
-@docs streamRequest, streamRequestWithID, cancelStreamRequest, heartbeat, setStreamRequestMarker
+@docs streamRequest, streamRequestWithID, cancelStreamRequest, heartbeat, setStreamRequestMarker, onRequestCanceled
 
 -}
 
@@ -19,7 +19,7 @@ import Nats.Effect
 import Nats.Errors
 import Nats.Protocol
 import Nats.Sub
-import Proto.Nrpc exposing (decodeError)
+import Proto.Nrpc exposing (HeartBeat, decodeError)
 import Proto.Nrpc.Internals_
 import Protobuf.Decode exposing (Decoder)
 import Protobuf.Encode exposing (Encoder)
@@ -201,6 +201,38 @@ heartbeat =
                         )
             )
         >> Nats.Effect.batch
+
+
+lastBeatMessage : Bytes
+lastBeatMessage =
+    Proto.Nrpc.encodeHeartBeat { lastbeat = True }
+        |> Protobuf.Encode.encode
+
+
+{-| Returns a nats effect to apply when a request is canceled.
+
+It sends the 'lastbeat' message on stream requests
+
+-}
+onRequestCanceled :
+    { sid : String
+    , id : String
+    , marker : Maybe String
+    , subject : String
+    , inbox : String
+    }
+    -> Nats.Effect Bytes msg
+onRequestCanceled req =
+    case req.marker of
+        Just marker ->
+            if String.startsWith "stream/" marker then
+                Nats.publish (req.inbox ++ ".heartbeat") lastBeatMessage
+
+            else
+                Nats.Effect.none
+
+        Nothing ->
+            Nats.Effect.none
 
 
 hasLeadlingZero : Bytes -> Bool
