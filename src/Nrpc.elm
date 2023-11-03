@@ -1,13 +1,12 @@
 module Nrpc exposing
-    ( Error(..), request, requestVoidReply, requestNoReply
-    , streamRequest, streamRequestWithID, cancelStreamRequest, heartbeat, setStreamRequestMarker, onRequestCanceled
-    , subscribeToNoRequestMethod
+    ( Error(..), request, requestVoidReply, requestNoReply, subscribeToNoRequestMethod
+    , streamRequest, cancelStreamRequest, heartbeat, setStreamRequestMarker, onRequestCanceled
     )
 
 {-| Utilities for Nrpc generated code
 
-@docs Error, request, requestVoidReply, requestNoReply
-@docs streamRequest, streamRequestWithID, cancelStreamRequest, heartbeat, setStreamRequestMarker, onRequestCanceled
+@docs Error, request, requestVoidReply, requestNoReply, subscribeToNoRequestMethod
+@docs streamRequest, cancelStreamRequest, heartbeat, setStreamRequestMarker, onRequestCanceled
 
 -}
 
@@ -17,9 +16,7 @@ import Bytes.Encode
 import Nats
 import Nats.Effect
 import Nats.Errors
-import Nats.Protocol
-import Nats.Sub
-import Proto.Nrpc exposing (HeartBeat, decodeError)
+import Proto.Nrpc exposing (decodeError)
 import Proto.Nrpc.Internals_
 import Protobuf.Decode exposing (Decoder)
 import Protobuf.Encode exposing (Encoder)
@@ -86,7 +83,7 @@ request encode decoder subject arg onResponse =
         )
 
 
-{-| subsribe to a stream request with void replies
+{-| Perform a request to a method with void
 -}
 requestVoidReply :
     (arg -> Encoder)
@@ -100,6 +97,11 @@ requestVoidReply encode subject arg tagger =
         (handleVoidResponse >> tagger)
 
 
+{-| publish a message to a 'noreply' method
+
+See <https://github.com/nats-rpc/nrpc/wiki/Specifications#noreply>
+
+-}
 requestNoReply :
     (arg -> Encoder)
     -> String
@@ -110,6 +112,11 @@ requestNoReply encode subject arg =
         (encode arg |> Protobuf.Encode.encode)
 
 
+{-| Perform a request expecting a streamed reply
+
+See <https://github.com/nats-rpc/nrpc/wiki/Specifications#streamed-replies>
+
+-}
 streamRequest :
     (arg -> Encoder)
     -> Decoder result
@@ -117,21 +124,9 @@ streamRequest :
     -> arg
     -> (Result Error result -> msg)
     -> Nats.Effect Bytes msg
-streamRequest encode decoder subject =
-    streamRequestWithID encode decoder subject ""
-
-
-streamRequestWithID :
-    (arg -> Encoder)
-    -> Decoder result
-    -> String
-    -> String
-    -> arg
-    -> (Result Error result -> msg)
-    -> Nats.Effect Bytes msg
-streamRequestWithID encode decoder subject id arg onResponse =
+streamRequest encode decoder subject arg onResponse =
     Nats.customRequest
-        { marker = "stream/" ++ id
+        { marker = "stream/"
         , subject = subject
         , replyTo = Nothing
         , message = encode arg |> Protobuf.Encode.encode
@@ -150,29 +145,6 @@ streamRequestWithID encode decoder subject id arg onResponse =
                         Ok result ->
                             ( Ok result |> onResponse |> Just, True )
         }
-
-
-
-{- subscribe to a stream request
-   requestSubscribe : String -> Maybe Json.Encode.Value -> Decoder b -> (Result Error b -> msg) -> Nats.Sub.Sub msg
-   requestSubscribe subject payload decoder tagger =
-   Nats.requestSubscribe subject
-   (payload
-   |> Maybe.map (Json.Encode.encode 0)
-   |> Maybe.withDefault ""
-   )
-   (handleResponse decoder >> tagger)
--}
-{- subscribe to a stream request with void replies
-   requestSubscribeVoidReply : String -> Maybe Json.Encode.Value -> (Result Error () -> msg) -> Nats.Sub.Sub msg
-   requestSubscribeVoidReply subject payload tagger =
-   Nats.requestSubscribe subject
-   (payload
-   |> Maybe.map (Json.Encode.encode 0)
-   |> Maybe.withDefault ""
-   )
-   (handleVoidResponse >> tagger)
--}
 
 
 {-| subscribe to a NoRequest method
@@ -252,6 +224,7 @@ isKeepAliveMsg bytes =
 decodeMessage : Decoder a -> Bytes -> Result Error a
 decodeMessage decoder message =
     let
+        isError : Bool
         isError =
             hasLeadlingZero message
     in
@@ -301,18 +274,30 @@ fromProtoError err =
             DecodeError <| "invalid error type: " ++ String.fromInt i
 
 
+emptyBytes : Bytes
 emptyBytes =
     Bytes.Encode.string ""
         |> Bytes.Encode.encode
 
 
+{-| Cancel a stream request given its marker
+
+The given marker must not have the "stream/" prefix
+
+-}
 cancelStreamRequest : String -> Nats.Effect datatype msg
 cancelStreamRequest marker =
-    -- TODO we should also send a heartbeat with 'last' set to 'true'
-    -- it will require knowing the request inbox
     Nats.cancelRequest ("stream/" ++ marker)
 
 
+{-| Add a marker to a streamRequest
+
+The string "stream/" will be prepended to the marker, so the heartbeat mechanism
+can still operate.
+
+The "stream/" prefix must be added too for tracking the request with Nats.track.
+
+-}
 setStreamRequestMarker : String -> Nats.Effect datatype msg -> Nats.Effect datatype msg
 setStreamRequestMarker marker =
     Nats.Effect.setRequestMarker ("stream/" ++ marker)
