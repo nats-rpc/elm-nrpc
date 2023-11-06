@@ -26,6 +26,10 @@
   "bin": {
     "protoc-gen-elm-nrpc": "./index.js"
   },
+  "files": [
+    "index.js",
+    "elm.min.js"
+  ],
   "bugs": {
     "url": "https://github.com/nats-rpc/elm-nrpc/issues"
   },
