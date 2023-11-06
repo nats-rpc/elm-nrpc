@@ -1,0 +1,36 @@
+{
+  "name": "protoc-gen-elm-nrpc",
+  "version": "1.0.0",
+  "description": "A Protoc plug-in that generate a NRPC client in Elm",
+  "main": "index.js",
+  "scripts": {
+    "build": "./build.sh",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nats-rpc/elm-nrpc.git"
+  },
+  "keywords": [
+    "elm",
+    "nats",
+    "nrpc",
+    "proto",
+    "protobuf",
+    "protoc",
+    "protocol-buffers",
+    "plugin"
+  ],
+  "author": "Christophe de Vienne <christophe.devienne@orus.io>",
+  "license": "MIT",
+  "bin": {
+    "protoc-gen-elm-nrpc": "./index.js"
+  },
+  "bugs": {
+    "url": "https://github.com/nats-rpc/elm-nrpc/issues"
+  },
+  "homepage": "https://github.com/nats-rpc/elm-nrpc#readme",
+  "devDependencies": {
+    "uglify-js": "^3.17.4"
+  }
+}

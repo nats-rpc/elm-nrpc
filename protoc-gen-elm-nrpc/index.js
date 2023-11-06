@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
-const Elm = require("./main.js").Elm
+const Elm = require("./elm.min.js").Elm
 
 
 const chunks = [];
